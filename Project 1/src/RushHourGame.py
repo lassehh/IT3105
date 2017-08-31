@@ -49,3 +49,9 @@ class RushHourGame:
             elif (orientation == 1):
                 boardDisplay[yPos:yPos + size, xPos] = number
 
+        # display the board on screen
+        for row in boardDisplay:
+            for element in row:
+                print(element + ' ', end='')
+            print('')
+
