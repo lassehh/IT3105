@@ -8,12 +8,12 @@ class AStar:
 	map = None
 	stride = None
 
-	def __init__(self, map, search_type, stride):  # Initialise A*
-		self.start = map.map[map.start[0], map.start[1]]  # Sets the start state
-		self.search_type = search_type  # Sets search type (for module 1)
-		self.created_dict = {(self.start.state): self.start}  # place the startnode in the created dictionary
-		self.open_list = []  # open list is empty
-		self.closed_list = []  # closed list is empty
+	def __init__(self, map, search_type, stride):
+		self.start = map.map[map.start[0], map.start[1]]
+		self.search_type = search_type
+		self.created_dict = {(self.start.state): self.start}
+		self.open_list = []
+		self.closed_list = []
 		self.map = map
 		self.stride = stride
 
@@ -27,7 +27,6 @@ class AStar:
 		self.open_list.append(n0)
 
 		# Agenda Loop
-		# while no solution
 		while (self.open_list):
 			x = self.search_queue_pop(self.search_type, self.open_list)
 			self.closed_list.append(x)
@@ -49,25 +48,25 @@ class AStar:
 
 		return []
 
-	def search_queue_pop(self, search_type, queue):  # for popping elements off the agenda queue (open list)
-		if search_type == "BFS":  # Breadth First Search mode
+	def search_queue_pop(self, search_type, queue):  #
+		if search_type == "BFS":  # Breadth First Search
 			return queue.pop(0)
-		elif search_type == "DFS":  # Depth First Search mode
+		elif search_type == "DFS":  # Depth First Search
 			return queue.pop()
-		elif search_type == "BestFS":  # Best First Search mode
+		elif search_type == "BestFS":  # Best First Search
 			current_node = min(queue, key=lambda x: x.f)
 			queue.remove(current_node)
 			return current_node
-		else:  # If not recognized search mode
+		else:
 			raise NotImplementedError
 
-	def attach_and_eval(self, c, p, map):  # Sett parent, g, h and f values of a new node
+	def attach_and_eval(self, c, p, map):
 		c.parent = p
 		c.g = p.g + p.arc_cost(c)
 		c.h = c.calc_h(map)
 		c.f = c.g + c.h
 
-	def propagate_path_improvements(self, p):  # Updates parent, g, h and f values if a better parent is found
+	def propagate_path_improvements(self, p):
 		for c in p.kids:
 			if p.g + p.arc_cost(c) < c.g:
 				c.parent = p
@@ -75,7 +74,7 @@ class AStar:
 				c.f = c.g + c.h
 				self.propagate_path_improvements(c)
 
-	def path(self, x):  # Returns the path from the start node/state to the goal node/state
+	def path(self, x):
 		goal_path = [x.state]
 		while x.parent:
 			x = x.parent
@@ -83,7 +82,7 @@ class AStar:
 			goal_path.append(x.state)
 		return goal_path[::-1]
 
-	def waypoints(self, x): # Returns the path found by A*
+	def waypoints(self, x):
 		waypoints = [(x.x,x.y)]
 		dir = self.direction(x, x.parent)
 		while x.parent:
@@ -94,7 +93,6 @@ class AStar:
 				x = x.parent
 			dir = tmp_dir
 		waypoints.append((x.x,x.y))
-		#print waypoints[::-1]
 		return waypoints[::-1]
 
 	def direction(self, p1, p2):
