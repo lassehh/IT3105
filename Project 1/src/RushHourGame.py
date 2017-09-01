@@ -20,7 +20,7 @@ class RushHourGame:
     def loadGameConfiguration(self, fileName):
         with open('../game_configurations/' + fileName + '.txt', 'r') as f:
             for line in f:
-                currentLine = line.strip("\n")
+                line = line.strip("\n")
                 currentLine = line.split(",")
                 currentLine = [int(x) for x in currentLine]
                 currentLine = [self.numberOfVehicles] + currentLine
@@ -35,7 +35,7 @@ class RushHourGame:
 
     def displayGame(self):
         boardDisplay = np.zeros(shape = self.gameBoardSize, dtype = str)
-        boardDisplay[:] = 'X'
+        boardDisplay[:] = 'x'
         for car in self.cars:
             (number, orientation, xPos, yPos, size)  = car[0], car[1], car[2], car[3], car[4]
             if(orientation == 0):
@@ -49,7 +49,7 @@ class RushHourGame:
             elif (orientation == 1):
                 boardDisplay[yPos:yPos + size, xPos] = number
 
-        # display the board on screen
+        # Display the board on screen
         for row in boardDisplay:
             for element in row:
                 print(element + ' ', end='')
