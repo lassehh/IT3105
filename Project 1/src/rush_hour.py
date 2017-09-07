@@ -65,7 +65,7 @@ class RushHourGameNode:
                 #if (element) in self.vehicleColors:
                 print(colored((element + ' '), self.vehicleColors[str(element)]), end ='')
             print('')
-        print('\n')
+        print('')
 
     def get_state_identifier(self, vehicles):
         state = ''
@@ -89,8 +89,6 @@ class RushHourGameNode:
             self.h = 1
         else:
             self.h = estimatedMovesToSolution
-
-
 
     def arc_cost(self):
         return 1
