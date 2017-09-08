@@ -5,8 +5,6 @@ import colorama
 from rush_hour import *
 from a_star_search import *
 
-
-
 def module_1(argv):
     # Initialize color prints
     colorama.init()
@@ -38,7 +36,7 @@ def module_1(argv):
     for searchType in searchTypes:
         print('\n\n')
         print("[MAIN]: Starting a new search for the solution to \"" + gameConfigFile + "\" with " + searchType + " search type.")
-        AStarSearchObject = AStar(searchType, initialGameNode, displayMode)
+        AStarSearchObject = AStar(searchType = searchType, startSearchNode = initialGameNode, displayMode = displayMode)
         solutionNode, numberOfMovesToSolution, searchNodesGenerated = AStarSearchObject.best_first_search()
         print("[MAIN]: With " + searchType + " search, the solution includes:")
         print("- " + str(numberOfMovesToSolution) + " moves")

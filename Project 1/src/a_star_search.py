@@ -10,9 +10,9 @@ class AStar:
 	searchNodesGenerated = None
 	costFromStartToGoal = None
 
-	def __init__(self, search_type, start_search_node, displayMode = False):
-		self.start = start_search_node
-		self.searchType = search_type
+	def __init__(self, searchType, startSearchNode, displayMode = False):
+		self.start = startSearchNode
+		self.searchType = searchType
 		self.displayMode = displayMode
 		self.createdDict = {(self.start.state): self.start}
 		self.openList = []
