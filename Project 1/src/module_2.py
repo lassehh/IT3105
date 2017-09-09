@@ -19,6 +19,10 @@ def module_2(argv):
     initialNonogramNode.load_nonogram_configuration(gameConfigFile)
 
 
+    #TESTING
+    initialCompostions = initialNonogramNode.findAllWeakCompositions(4, 3)
+
+
 
 
 

@@ -47,7 +47,10 @@ class NonogramNode:
                 rowSpec = [int(x) for x in rowSpec]
 
                 minTotalSegmentLength = sum(rowSpec) + len(rowSpec) - 1
-                maxSegmentMoves = self.rows - minTotalSegmentLength
+                maxSegmentMoves = self.cols - minTotalSegmentLength
+                rowDomain = []
+                self.findAllWeakCompositions(rowDomain, maxSegmentMoves, len(rowSpec) + 1)
+
 
 
 
@@ -61,4 +64,46 @@ class NonogramNode:
             noob = 0
 
 
-    #def find_variable_domains(self, tempDomain):
+# Description: Finds all possible weak compositions of the number n with k parts
+# Input: number n, parts k
+# Output: Variable length list with lists of length k
+    def findAllWeakCompositions(self, rowDomain, n, k):
+        for i in range(0, k):
+            initialComposition = []
+            for j in range(0, k):
+                if(i == j):
+                    initialComposition.append(n)
+                else:
+                    initialComposition.append(0)
+            self.partition(rowDomain, initialComposition, i, k)
+
+    def partition(self, rowDomain, parentComposition, reductionIndex, k):
+        parentCompositionCopy = list(parentComposition)
+
+        largestElement = sorted(set(parentCompositionCopy))[-1]
+        secondLargestElement = sorted(set(parentCompositionCopy))[-2]
+
+        if parentComposition not in rowDomain:
+            rowDomain.append(parentComposition)
+
+        if(largestElement - secondLargestElement < 2):
+            return 0
+        else:
+            newCompostions = []
+            for i in range(0, k):
+                tempComposition = list(parentComposition)
+                for j in range(0, k):
+                    if(j == reductionIndex):
+                        tempComposition[j] -= 1
+                    if(j == i):
+                        tempComposition[j] += 1
+                if (i == reductionIndex):
+                    continue
+                else:
+                    newCompostions.append(tempComposition)
+
+
+            for composition in newCompostions:
+                self.partition(rowDomain, composition, reductionIndex, k)
+            return 0
+
