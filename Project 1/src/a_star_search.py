@@ -8,6 +8,7 @@ class AStar:
 	displayMode = None
 
 	searchNodesGenerated = None
+	searchNodesExpanded = None
 	costFromStartToGoal = None
 
 	def __init__(self, searchType, startSearchNode, displayMode = False):
@@ -18,7 +19,9 @@ class AStar:
 		self.openList = []
 		self.closedList = []
 		self.searchNodesGenerated = 0
+		self.searchNodesExpanded = 0
 		self.costFromStartToGoal = 0
+
 
 	def best_first_search(self):
 		self.n0 = self.start
@@ -51,6 +54,7 @@ class AStar:
 				return x, costFromStartToGoal, self.searchNodesGenerated
 
 			successors = x.generate_successors()
+			self.searchNodesExpanded += 1
 			for s in successors:
 				x.kids.append(s)
 				if (s.state) in self.createdDict:

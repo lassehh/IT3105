@@ -7,15 +7,16 @@ from string import *
 
 
 class RushHourGameNode:
+    # Internal variables
     gameBoard = None
     gameBoardSize = []
     numberOfVehicles = 0
     vehicles = []
     vehicleColors = None
 
+    # A* variables
     start = None
     goal = None
-
     state = None
     parent = None
     kids = None
@@ -39,7 +40,7 @@ class RushHourGameNode:
         self.g = 0
 
     def load_game_configuration(self, fileName):
-        with open('../game_configurations/' + fileName + '.txt', 'r') as f:
+        with open('../rush_hour_game_configurations/' + fileName + '.txt', 'r') as f:
             for line in f:
                 line = line.strip("\n")
                 currentLine = line.split(",")
