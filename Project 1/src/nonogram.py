@@ -4,6 +4,8 @@ from termcolor import colored, cprint
 import colorama
 from string import *
 
+#GitKrakenTest!
+
 class NonogramNode:
     # Internal variables
     rows = None
@@ -48,8 +50,8 @@ class NonogramNode:
 
                 minTotalSegmentLength = sum(rowSpec) + len(rowSpec) - 1
                 maxSegmentMoves = self.cols - minTotalSegmentLength
-                rowDomain = []
-                self.findAllWeakCompositions(rowDomain, maxSegmentMoves, len(rowSpec) + 1)
+                rowCompositions = []
+                self.findAllWeakCompositions(rowCompositions, maxSegmentMoves, len(rowSpec) + 1)
 
 
 
@@ -63,11 +65,11 @@ class NonogramNode:
 
             noob = 0
 
-
-# Description: Finds all possible weak compositions of the number n with k parts
+############
+# Description: Finds all possible (restricted) weak compositions of the number n with k parts
 # Input: number n, parts k
-# Output: Variable length list with lists of length k
-    def findAllWeakCompositions(self, rowDomain, n, k):
+# Output: Variable length list with lists of length k that contains all the possible compositions for n, k
+    def findAllWeakCompositions(self, compositionsAccumulator, n, k):
         for i in range(0, k):
             initialComposition = []
             for j in range(0, k):
@@ -75,16 +77,26 @@ class NonogramNode:
                     initialComposition.append(n)
                 else:
                     initialComposition.append(0)
-            self.partition(rowDomain, initialComposition, i, k)
+            self.generateNewCompositions(compositionsAccumulator, initialComposition, i, k)
 
-    def partition(self, rowDomain, parentComposition, reductionIndex, k):
+############
+# Description: Generates (k - 1) new compositions from parentComposition through the reduction index and stores them in
+#              compostionAccumulator
+# Input:
+#  - the storage for all the compositions, compositionsAccumulaator
+#  - root node composition, parentComposition
+#  - which index to reduce and to generate new compostions from, reductionIndex
+#  - how many parts the composition must contain, k
+# Output: 0 (nothing), terminates when the diffeence betweenlargest and second largest element of the composition
+#       is less than 2 (i.e 1).
+    def generateNewCompositions(self, compositionsAccumulator, parentComposition, reductionIndex, k):
         parentCompositionCopy = list(parentComposition)
 
         largestElement = sorted(set(parentCompositionCopy))[-1]
         secondLargestElement = sorted(set(parentCompositionCopy))[-2]
 
-        if parentComposition not in rowDomain:
-            rowDomain.append(parentComposition)
+        if parentComposition not in compositionsAccumulator:
+            compositionsAccumulator.append(parentComposition)
 
         if(largestElement - secondLargestElement < 2):
             return 0
@@ -104,6 +116,6 @@ class NonogramNode:
 
 
             for composition in newCompostions:
-                self.partition(rowDomain, composition, reductionIndex, k)
+                self.generateNewCompositions(compositionsAccumulator, composition, reductionIndex, k)
             return 0
 
