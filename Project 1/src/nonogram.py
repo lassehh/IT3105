@@ -55,7 +55,7 @@ class NonogramNode:
                 minTotalSegmentLength = sum(rowSpec) + len(rowSpec) - 1
                 maxSegmentMoves = self.cols - minTotalSegmentLength
                 rowCompositions = []
-                self.findAllWeakCompositions(rowCompositions, maxSegmentMoves, len(rowSpec) + 1)
+                self.findAllWeakCompositions2(rowCompositions, maxSegmentMoves, len(rowSpec) + 1)
 
                 rowDomain = []
                 for composition in rowCompositions:
@@ -78,7 +78,7 @@ class NonogramNode:
                 minTotalSegmentLength = sum(colSpec) + len(colSpec) - 1
                 maxSegmentMoves = self.rows - minTotalSegmentLength
                 colCompositions = []
-                self.findAllWeakCompositions(colCompositions, maxSegmentMoves, len(colSpec) + 1)
+                self.findAllWeakCompositions2(colCompositions, maxSegmentMoves, len(colSpec) + 1)
 
                 colDomain = []
                 for composition in colCompositions:
@@ -94,7 +94,41 @@ class NonogramNode:
                     colDomain.append(colValue)
                 self.colVariables.append(colDomain)
 
-############
+
+    def findAllWeakCompositions2(self, compositionsAccumulator, n, k):
+        reductionIndex = 0
+        initialComposition = [0] * k
+        initialComposition[0] = n
+        self.generateNewCompositions2(compositionsAccumulator, initialComposition, reductionIndex, n, k)
+
+    def generateNewCompositions2(self, compositionsAccumulator, parentComposition, reductionIndex, n, k):
+
+        if parentComposition not in compositionsAccumulator:
+            compositionsAccumulator.append(parentComposition)
+
+        if (parentComposition[reductionIndex] == 0):
+            return 0
+
+        else:
+            newCompostions = []
+            for i in range(0, k):
+                if (i == reductionIndex):
+                    continue
+                tempComposition = list(parentComposition)
+                for j in range(0, k):
+                    if (j == reductionIndex):
+                        tempComposition[j] -= 1
+                    if (j == i):
+                        tempComposition[j] += 1
+                newCompostions.append(tempComposition)
+
+            for composition in newCompostions:
+                if composition not in compositionsAccumulator:
+                    self.generateNewCompositions2(compositionsAccumulator, composition, reductionIndex, n, k)
+            return 0
+
+
+        ############
 # Description: Finds all possible (restricted) weak compositions of the number n with k parts
 # Input: number n, parts k
 # Output: Variable length list with lists of length k that contains all the possible compositions for n, k
