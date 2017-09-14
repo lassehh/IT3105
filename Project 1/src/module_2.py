@@ -1,5 +1,6 @@
 import numpy
 import sys
+import time
 from termcolor import colored
 import colorama
 from nonogram import *
@@ -16,11 +17,16 @@ def module_2(argv):
 
     # Initialize a nonogram with the config
     initialNonogramNode = NonogramNode()
+    startLoadConfigTime = time.clock()
     initialNonogramNode.load_nonogram_configuration(gameConfigFile)
+    print('[MAIN]: Loading the config took: ', time.clock() - startLoadConfigTime, ' seconds.')
 
 
     #TESTING
-    initialCompostions = initialNonogramNode.findAllWeakCompositions(4, 3)
+    #initialCompostions = initialNonogramNode.findAllWeakCompositions(4, 3)
+
+
+    return 0
 
 
 

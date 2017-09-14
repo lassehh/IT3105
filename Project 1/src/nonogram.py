@@ -26,7 +26,11 @@ class NonogramNode:
     h = 0
 
     def __init__(self):
-        self.VI = []
+        self.rows = None
+        self.cols = None
+
+        self.rowVariables = []
+        self.colVariables = []
 
         self.start = None
         self.goal = None
@@ -53,31 +57,56 @@ class NonogramNode:
                 rowCompositions = []
                 self.findAllWeakCompositions(rowCompositions, maxSegmentMoves, len(rowSpec) + 1)
 
+                rowDomain = []
+                for composition in rowCompositions:
+                    rowValue = []
+                    for i in range(0,len(composition)):
+                        if(i != 0 and i != len(composition) - 1):
+                            rowValue += ([0] * (composition[i] + 1))
+                        else:
+                            rowValue += ([0] * composition[i])
+                        if(i < len(composition) - 1):
+                            rowValue += ([1] * rowSpec[i])
 
+                    rowDomain.append(rowValue)
+                self.rowVariables.append(rowDomain)
 
-
-            for i in range(0, self.cols):
+            for col in range(0, self.cols):
                 colSpec = f.readline().split(" ")
                 colSpec = [int(x) for x in colSpec]
 
                 minTotalSegmentLength = sum(colSpec) + len(colSpec) - 1
                 maxSegmentMoves = self.rows - minTotalSegmentLength
+                colCompositions = []
+                self.findAllWeakCompositions(colCompositions, maxSegmentMoves, len(colSpec) + 1)
 
-            noob = 0
+                colDomain = []
+                for composition in colCompositions:
+                    colValue = []
+                    for i in range(0, len(composition)):
+                        if (i != 0 and i != len(composition) - 1):
+                            colValue += ([0] * (composition[i] + 1))
+                        else:
+                            colValue += ([0] * composition[i])
+                        if (i < len(composition) - 1):
+                            colValue += ([1] * colSpec[i])
+
+                    colDomain.append(colValue)
+                self.colVariables.append(colDomain)
 
 ############
 # Description: Finds all possible (restricted) weak compositions of the number n with k parts
 # Input: number n, parts k
 # Output: Variable length list with lists of length k that contains all the possible compositions for n, k
     def findAllWeakCompositions(self, compositionsAccumulator, n, k):
-        for i in range(0, k):
+        for reductionIndex in range(0, k):
             initialComposition = []
             for j in range(0, k):
-                if(i == j):
+                if(reductionIndex == j):
                     initialComposition.append(n)
                 else:
                     initialComposition.append(0)
-            self.generateNewCompositions(compositionsAccumulator, initialComposition, i, k)
+            self.generateNewCompositions(compositionsAccumulator, initialComposition, reductionIndex, n, k)
 
 ############
 # Description: Generates (k - 1) new compositions from parentComposition through the reduction index and stores them in
@@ -87,35 +116,38 @@ class NonogramNode:
 #  - root node composition, parentComposition
 #  - which index to reduce and to generate new compostions from, reductionIndex
 #  - how many parts the composition must contain, k
-# Output: 0 (nothing), terminates when the diffeence betweenlargest and second largest element of the composition
+# Output: 0 (nothing), terminates when the diffeence between largest and second largest element of the composition
 #       is less than 2 (i.e 1).
-    def generateNewCompositions(self, compositionsAccumulator, parentComposition, reductionIndex, k):
+    def generateNewCompositions(self, compositionsAccumulator, parentComposition, reductionIndex, n, k):
         parentCompositionCopy = list(parentComposition)
 
-        largestElement = sorted(set(parentCompositionCopy))[-1]
-        secondLargestElement = sorted(set(parentCompositionCopy))[-2]
+        largestElement = sorted(parentCompositionCopy)[-1]
+        secondLargestElement = sorted(parentCompositionCopy)[-2]
 
         if parentComposition not in compositionsAccumulator:
             compositionsAccumulator.append(parentComposition)
 
-        if(largestElement - secondLargestElement < 2):
+        if(largestElement - secondLargestElement < 2 and n % k > 0):
+            return 0
+        elif(largestElement - secondLargestElement < 1 and n & k == 0):
             return 0
         else:
             newCompostions = []
             for i in range(0, k):
+                if (i == reductionIndex):
+                    continue
                 tempComposition = list(parentComposition)
                 for j in range(0, k):
                     if(j == reductionIndex):
                         tempComposition[j] -= 1
                     if(j == i):
                         tempComposition[j] += 1
-                if (i == reductionIndex):
-                    continue
-                else:
-                    newCompostions.append(tempComposition)
+                newCompostions.append(tempComposition)
 
 
             for composition in newCompostions:
-                self.generateNewCompositions(compositionsAccumulator, composition, reductionIndex, k)
+                if composition not in compositionsAccumulator:
+                    newReductionIndex = max(range(len(composition)), key = composition.__getitem__)
+                    self.generateNewCompositions(compositionsAccumulator, composition, newReductionIndex, n, k)
             return 0
 
