@@ -43,145 +43,87 @@ class NonogramNode:
 
 
     def load_nonogram_configuration(self, fileName):
-        #self.VI.append(VariableInstance(0))
         with open('../nonograms_configurations/' + fileName + '.txt', 'r') as f:
+            # Read nonogram size
             firstLine = f.readline().split(" ")
             self.cols, self.rows = [int(x) for x in firstLine]
 
             for row in range(0, self.rows):
+                # Read row specifications from file
                 rowSpec = f.readline().split(" ")
                 rowSpec = [int(x) for x in rowSpec]
 
+                # Translate to a compositions-problem
                 minTotalSegmentLength = sum(rowSpec) + len(rowSpec) - 1
                 maxSegmentMoves = self.cols - minTotalSegmentLength
-                rowCompositions = []
-                self.findAllWeakCompositions2(rowCompositions, maxSegmentMoves, len(rowSpec) + 1)
+                compositionRestrictionLength = (len(rowSpec) + 1)
 
-                rowDomain = []
-                for composition in rowCompositions:
-                    rowValue = []
-                    for i in range(0,len(composition)):
-                        if(i != 0 and i != len(composition) - 1):
-                            rowValue += ([0] * (composition[i] + 1))
-                        else:
-                            rowValue += ([0] * composition[i])
-                        if(i < len(composition) - 1):
-                            rowValue += ([1] * rowSpec[i])
+                # Initialize storage and initial composition, and find all compositions
+                initialComposition = [0] * compositionRestrictionLength
+                initialComposition[0] = maxSegmentMoves
+                rowCompositions = [initialComposition]
+                self.find_all_weak_compositions(rowCompositions, initialComposition, maxSegmentMoves, compositionRestrictionLength)
 
-                    rowDomain.append(rowValue)
+                # Translate from compositions to a row variables domain
+                rowDomain = self.compositions_to_variable_values(rowCompositions, rowSpec)
                 self.rowVariables.append(rowDomain)
 
             for col in range(0, self.cols):
+                # Read column specifications from file
                 colSpec = f.readline().split(" ")
                 colSpec = [int(x) for x in colSpec]
 
+                # Translate to a compositions-problem
                 minTotalSegmentLength = sum(colSpec) + len(colSpec) - 1
                 maxSegmentMoves = self.rows - minTotalSegmentLength
-                colCompositions = []
-                self.findAllWeakCompositions2(colCompositions, maxSegmentMoves, len(colSpec) + 1)
+                compositionRestrictionLength = (len(colSpec) + 1)
 
-                colDomain = []
-                for composition in colCompositions:
-                    colValue = []
-                    for i in range(0, len(composition)):
-                        if (i != 0 and i != len(composition) - 1):
-                            colValue += ([0] * (composition[i] + 1))
-                        else:
-                            colValue += ([0] * composition[i])
-                        if (i < len(composition) - 1):
-                            colValue += ([1] * colSpec[i])
+                # Initialize storage and initial composition, and find all compositions
+                initialComposition = [0] * compositionRestrictionLength
+                initialComposition[0] = maxSegmentMoves
+                colCompositions = [initialComposition]
+                self.find_all_weak_compositions(colCompositions, initialComposition, maxSegmentMoves, compositionRestrictionLength)
 
-                    colDomain.append(colValue)
+                # Translate from compositions to a column variables domain
+                colDomain = self.compositions_to_variable_values(colCompositions, colSpec)
                 self.colVariables.append(colDomain)
 
 
-    def findAllWeakCompositions2(self, compositionsAccumulator, n, k):
-        reductionIndex = 0
-        initialComposition = [0] * k
-        initialComposition[0] = n
-        self.generateNewCompositions2(compositionsAccumulator, initialComposition, reductionIndex, n, k)
-
-    def generateNewCompositions2(self, compositionsAccumulator, parentComposition, reductionIndex, n, k):
-
-        if parentComposition not in compositionsAccumulator:
-            compositionsAccumulator.append(parentComposition)
-
-        if (parentComposition[reductionIndex] == 0):
-            return 0
-
-        else:
-            newCompostions = []
-            for i in range(0, k):
-                if (i == reductionIndex):
-                    continue
+# Description: Finds all possible (restricted) weak compositions of the number n with k parts.
+#             Continuously appends the compositions to the storage.
+# Input: storage compositionsAccumulator, parentNode parentComposition, number n, parts k
+# Output: 0
+    def find_all_weak_compositions(self, compositionsAccumulator, parentComposition, n, k):
+        if (parentComposition[0] != 0):
+            newCompositions = []
+            for i in range(1, k):
                 tempComposition = list(parentComposition)
                 for j in range(0, k):
-                    if (j == reductionIndex):
+                    if (j == 0):
                         tempComposition[j] -= 1
                     if (j == i):
                         tempComposition[j] += 1
-                newCompostions.append(tempComposition)
+                newCompositions.append(tempComposition)
 
-            for composition in newCompostions:
+            for composition in newCompositions:
                 if composition not in compositionsAccumulator:
-                    self.generateNewCompositions2(compositionsAccumulator, composition, reductionIndex, n, k)
-            return 0
+                    compositionsAccumulator.append(composition)
+                    #if(composition[0] != 0):
+                    self.find_all_weak_compositions(compositionsAccumulator, composition, n, k)
 
-
-        ############
-# Description: Finds all possible (restricted) weak compositions of the number n with k parts
-# Input: number n, parts k
-# Output: Variable length list with lists of length k that contains all the possible compositions for n, k
-    def findAllWeakCompositions(self, compositionsAccumulator, n, k):
-        for reductionIndex in range(0, k):
-            initialComposition = []
-            for j in range(0, k):
-                if(reductionIndex == j):
-                    initialComposition.append(n)
-                else:
-                    initialComposition.append(0)
-            self.generateNewCompositions(compositionsAccumulator, initialComposition, reductionIndex, n, k)
-
-############
-# Description: Generates (k - 1) new compositions from parentComposition through the reduction index and stores them in
-#              compostionAccumulator
+# Description:
 # Input:
-#  - the storage for all the compositions, compositionsAccumulaator
-#  - root node composition, parentComposition
-#  - which index to reduce and to generate new compostions from, reductionIndex
-#  - how many parts the composition must contain, k
-# Output: 0 (nothing), terminates when the diffeence between largest and second largest element of the composition
-#       is less than 2 (i.e 1).
-    def generateNewCompositions(self, compositionsAccumulator, parentComposition, reductionIndex, n, k):
-        parentCompositionCopy = list(parentComposition)
-
-        largestElement = sorted(parentCompositionCopy)[-1]
-        secondLargestElement = sorted(parentCompositionCopy)[-2]
-
-        if parentComposition not in compositionsAccumulator:
-            compositionsAccumulator.append(parentComposition)
-
-        if(largestElement - secondLargestElement < 2 and n % k > 0):
-            return 0
-        elif(largestElement - secondLargestElement < 1 and n & k == 0):
-            return 0
-        else:
-            newCompostions = []
-            for i in range(0, k):
-                if (i == reductionIndex):
-                    continue
-                tempComposition = list(parentComposition)
-                for j in range(0, k):
-                    if(j == reductionIndex):
-                        tempComposition[j] -= 1
-                    if(j == i):
-                        tempComposition[j] += 1
-                newCompostions.append(tempComposition)
-
-
-            for composition in newCompostions:
-                if composition not in compositionsAccumulator:
-                    newReductionIndex = max(range(len(composition)), key = composition.__getitem__)
-                    self.generateNewCompositions(compositionsAccumulator, composition, newReductionIndex, n, k)
-            return 0
-
+# Output:
+    def compositions_to_variable_values(self, compositions, variableSpec):
+        values = []
+        for composition in compositions:
+            colValue = []
+            for i in range(0, len(composition)):
+                if (i != 0 and i != len(composition) - 1):
+                    colValue += ([0] * (composition[i] + 1))
+                else:
+                    colValue += ([0] * composition[i])
+                if (i < len(composition) - 1):
+                    colValue += ([1] * variableSpec[i])
+            values.append(colValue)
+        return values
