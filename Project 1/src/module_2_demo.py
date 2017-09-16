@@ -3,7 +3,7 @@ import sys
 import time
 from termcolor import colored
 import colorama
-from nonogram import *
+from nonogram_csp import *
 from a_star_search import *
 
 def module_2(argv):
@@ -16,10 +16,13 @@ def module_2(argv):
     print('')
 
     # Initialize a nonogram with the config
-    initialNonogramNode = NonogramNode()
+    initialNonogramNode = NonogramCspNode()
     startLoadConfigTime = time.clock()
     initialNonogramNode.load_nonogram_configuration(gameConfigFile)
     print('[MAIN]: Loading the config took: ', time.clock() - startLoadConfigTime, ' seconds.')
+
+    # Create all problem constraints
+    initialNonogramNode.create_all_constraints()
 
 
     #TESTING

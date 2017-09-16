@@ -4,9 +4,8 @@ from termcolor import colored, cprint
 import colorama
 from string import *
 
-#GitKrakenTest!
 
-class NonogramNode:
+class NonogramCspNode:
     # Internal variables
     rows = None
     cols = None
@@ -14,6 +13,7 @@ class NonogramNode:
     # CSP variables
     rowVariables = None
     colVariables = None
+    constraints = None
 
     # A* variables
     start = None
@@ -31,6 +31,7 @@ class NonogramNode:
 
         self.rowVariables = []
         self.colVariables = []
+        self.constraints = []
 
         self.start = None
         self.goal = None
@@ -41,14 +42,16 @@ class NonogramNode:
         self.f = 0
         self.h = 0
 
-
+# Description: Loads the configuration for the nonogram and builds the variables domain.
+# Input: text document with a nonogram config, fileName
+# Output: None
     def load_nonogram_configuration(self, fileName):
         with open('../nonograms_configurations/' + fileName + '.txt', 'r') as f:
             # Read nonogram size
             firstLine = f.readline().split(" ")
             self.cols, self.rows = [int(x) for x in firstLine]
 
-            for row in range(0, self.rows):
+            for rowNumber in range(0, self.rows):
                 # Read row specifications from file
                 rowSpec = f.readline().split(" ")
                 rowSpec = [int(x) for x in rowSpec]
@@ -62,13 +65,15 @@ class NonogramNode:
                 initialComposition = [0] * compositionRestrictionLength
                 initialComposition[0] = maxSegmentMoves
                 rowCompositions = [initialComposition]
-                self.find_all_weak_compositions(rowCompositions, initialComposition, maxSegmentMoves, compositionRestrictionLength)
+                if(initialComposition[0] != 0):
+                    self.find_all_weak_compositions(rowCompositions, initialComposition,
+                                                    maxSegmentMoves, compositionRestrictionLength)
 
                 # Translate from compositions to a row variables domain
                 rowDomain = self.compositions_to_variable_values(rowCompositions, rowSpec)
-                self.rowVariables.append(rowDomain)
+                self.rowVariables.append(VariableInstance('row', rowNumber, rowDomain))
 
-            for col in range(0, self.cols):
+            for colNumber in range(0, self.cols):
                 # Read column specifications from file
                 colSpec = f.readline().split(" ")
                 colSpec = [int(x) for x in colSpec]
@@ -82,11 +87,22 @@ class NonogramNode:
                 initialComposition = [0] * compositionRestrictionLength
                 initialComposition[0] = maxSegmentMoves
                 colCompositions = [initialComposition]
-                self.find_all_weak_compositions(colCompositions, initialComposition, maxSegmentMoves, compositionRestrictionLength)
+                if (initialComposition[0] != 0):
+                    self.find_all_weak_compositions(colCompositions, initialComposition,
+                                                    maxSegmentMoves, compositionRestrictionLength)
 
                 # Translate from compositions to a column variables domain
                 colDomain = self.compositions_to_variable_values(colCompositions, colSpec)
-                self.colVariables.append(colDomain)
+                self.colVariables.append(VariableInstance('col', colNumber, colDomain))
+
+# Description:
+# Input:
+# Output:
+    def create_all_constraints(self):
+        for row in self.rowVariables:
+            for col in self.colVariables:
+                constraintInstance = ConstraintInstance(row, col)
+                self.constraints.append(constraintInstance)
 
 
 # Description: Finds all possible (restricted) weak compositions of the number n with k parts.
@@ -94,21 +110,20 @@ class NonogramNode:
 # Input: storage compositionsAccumulator, parentNode parentComposition, number n, parts k
 # Output: 0
     def find_all_weak_compositions(self, compositionsAccumulator, parentComposition, n, k):
-        if (parentComposition[0] != 0):
-            newCompositions = []
-            for i in range(1, k):
-                tempComposition = list(parentComposition)
-                for j in range(0, k):
-                    if (j == 0):
-                        tempComposition[j] -= 1
-                    if (j == i):
-                        tempComposition[j] += 1
-                newCompositions.append(tempComposition)
+        newCompositions = []
+        for i in range(1, k):
+            tempComposition = list(parentComposition)
+            for j in range(0, k):
+                if (j == 0):
+                    tempComposition[j] -= 1
+                if (j == i):
+                    tempComposition[j] += 1
+            newCompositions.append(tempComposition)
 
-            for composition in newCompositions:
-                if composition not in compositionsAccumulator:
-                    compositionsAccumulator.append(composition)
-                    #if(composition[0] != 0):
+        for composition in newCompositions:
+            if composition not in compositionsAccumulator:
+                compositionsAccumulator.append(composition)
+                if(composition[0] != 0):
                     self.find_all_weak_compositions(compositionsAccumulator, composition, n, k)
 
 # Description:
@@ -117,13 +132,48 @@ class NonogramNode:
     def compositions_to_variable_values(self, compositions, variableSpec):
         values = []
         for composition in compositions:
-            colValue = []
+            value = []
             for i in range(0, len(composition)):
                 if (i != 0 and i != len(composition) - 1):
-                    colValue += ([0] * (composition[i] + 1))
+                    value += ([0] * (composition[i] + 1))
                 else:
-                    colValue += ([0] * composition[i])
+                    value += ([0] * composition[i])
                 if (i < len(composition) - 1):
-                    colValue += ([1] * variableSpec[i])
-            values.append(colValue)
+                    value += ([1] * variableSpec[i])
+            values.append(value)
         return values
+
+# Description:
+# Input:
+# Output:
+class ConstraintInstance:
+    rowVariableInstance = None
+    colVariableInstance = None
+
+    def __init__(self, rowVariableInstance, colVariableInstance):
+        self.rowVariableInstance = rowVariableInstance
+        self.colVariableInstance = colVariableInstance
+
+    def satisfied(self, focalVariable):
+        if(focalVariable == 'col'):
+            focalVariable = self.colVariableInstance
+            nonFocalVariable = self.rowVariableInstance
+        elif(focalVariable == 'row'):
+            focalVariable = self.rowVariableInstance
+            nonFocalVariable = self.colVariableInstance
+        else:
+            raise AttributeError
+
+# Description:
+# Input:
+# Output:
+class VariableInstance:
+    type = None
+    number = None
+    domain = None
+
+    def __init__(self, type, number, domain):
+        self.type = type
+        self.number = number
+        self.domain = domain
+
