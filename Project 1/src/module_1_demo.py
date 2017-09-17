@@ -3,7 +3,7 @@ import sys
 from termcolor import colored
 import colorama
 from rush_hour import *
-from a_star_search import *
+from astar_search import *
 
 def module_1(argv):
     # Initialize color prints
@@ -42,7 +42,6 @@ def module_1(argv):
         print("- " + str(numberOfMovesToSolution) + " moves")
         print("- " + str(AStarSearchObject.searchNodesGenerated) + " nodes generated")
 
-    noob = 0
     return 0
 
 

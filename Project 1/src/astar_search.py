@@ -64,7 +64,7 @@ class AStar:
 					self.openList.append(s)
 					self.createdDict[(s.state)] = s
 					self.searchNodesGenerated += 1
-				elif x.g + x.arc_cost() < s.g:
+				elif x.g + x.arc_cost(s) < s.g:
 					self.attach_and_eval(s, x)
 					if s in self.closedList:
 						self.propagate_path_improvements(s)
@@ -84,15 +84,15 @@ class AStar:
 
 	def attach_and_eval(self, c, p):
 		c.parent = p
-		c.g = p.g + p.arc_cost()
+		c.g = p.g + p.arc_cost(c)
 		c.calc_h()
 		c.f = c.g + c.h
 
 	def propagate_path_improvements(self, p):
 		for c in p.kids:
-			if p.g + p.arc_cost() < c.g:
+			if p.g + p.arc_cost(c) < c.g:
 				c.parent = p
-				c.g = p.g + p.arc_cost()
+				c.g = p.g + p.arc_cost(c)
 				c.f = c.g + c.h
 				self.propagate_path_improvements(c)
 
@@ -114,6 +114,3 @@ class AStar:
 				solutionNode.display_game_board()
 				if (solutionNode.parent == None): stopDisplaying = True
 				solutionNode = solutionNode.parent
-
-
-
