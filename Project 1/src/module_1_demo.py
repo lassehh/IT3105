@@ -29,7 +29,7 @@ def module_1(argv):
     # Display the board
     print("[MAIN]: Board: " + gameConfigFile)
     initialGameNode.update_game_board()
-    initialGameNode.display_game_board()
+    initialGameNode.display_node()
 
     # Run the AStar algorithm on all 3 types of search and display the result
     searchTypes = ["BFS", "DFS", "BestFS"]
@@ -37,7 +37,7 @@ def module_1(argv):
         print('\n\n')
         print("[MAIN]: Starting a new search for the solution to \"" + gameConfigFile + "\" with " + searchType + " search type.")
         AStarSearchObject = AStar(searchType = searchType, startSearchNode = initialGameNode, displayMode = displayMode)
-        solutionNode, numberOfMovesToSolution, searchNodesGenerated = AStarSearchObject.best_first_search()
+        solutionNode, numberOfMovesToSolution, searchNodesGenerated, _ = AStarSearchObject.best_first_search()
         print("[MAIN]: With " + searchType + " search, the solution includes:")
         print("- " + str(numberOfMovesToSolution) + " moves")
         print("- " + str(AStarSearchObject.searchNodesGenerated) + " nodes generated")

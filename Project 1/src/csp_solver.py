@@ -4,22 +4,33 @@ from termcolor import colored, cprint
 import colorama
 from string import *
 
+"""
+Class: Arc
+An arc represents variables and the constraint between them.
+"""
 class Arc:
-    focalVariable = None        # Reference to the variable
+    focalVariable = None        # Reference to the focal variable
     constraint = None           # Reference to the constraint
 
     def __init__(self, focalVariable, constraint):
         self.focalVariable = focalVariable
         self.constraint = constraint
 
-
+"""
+Class: GAC
+Impelements the General Arc Consistency algorithm.
+"""
 class GAC:
-    queue = None
-    problemRef = None
+    queue = None        # list of arcs that must be revised
+    problemRef = None   # Reference to the problem that GAC tries to solve
 
     def __init__(self):
         self.queue = []
 
+
+# Description: appends all arcs to the queue
+# Input: Reference to the problem that GAC tries to solve, problemObject
+# Output: None
     def initialization(self, problemObject):
         for constraint in problemObject.constraints:
             variables = constraint.get_all_variables(problemObject)
@@ -31,6 +42,10 @@ class GAC:
     def set_problem_ref(self, problemObject):
         self.problemRef = problemObject
 
+# Description: Implementation of the domain filtering loop of the GAC algorithm.
+#              Pops arcs from the queue and calls revise. Adds new arcs to the queue if necessary
+# Input: None
+# Output: False if an inconsistency is found and True otherwise, validReduction
     def domain_filtering_loop(self):
         while self.queue:
             arc = self.queue.pop()
@@ -50,6 +65,9 @@ class GAC:
                         arc = Arc(focalVariable = variable, constraint = constraint)
                         self.queue.append(arc)
 
+# Description: removes domain values from a variable if the constraint is not satisfied
+# Input: the focal variable and constraint in the revision, arc
+# Output: True/False variable, revised
     def revise(self, arc):
         revised = False
         focalVariable, constraint = arc.focalVariable, arc.constraint
@@ -66,13 +84,16 @@ class GAC:
                         revised = True
         return revised
 
+# Description: Appends new arcs to the queue, given that an assumption has just been made on a variable. Runs domain filtering loop
+# Input: the variable where an assumption has been made, focalVariable
+# Output: True/False value from domain filtering loop
     def rerun(self, focalVariable):
         for constraint in self.problemRef.constraints:
             allVariables = constraint.get_all_variables(self.problemRef)
             if (focalVariable in allVariables):
                 for variable in allVariables:
                     if (variable != focalVariable):
-                        arc = Arc(focalVariable=variable, constraint=constraint)
+                        arc = Arc(focalVariable = variable, constraint = constraint)
                         self.queue.append(arc)
         validReduction = self.domain_filtering_loop()
         return validReduction

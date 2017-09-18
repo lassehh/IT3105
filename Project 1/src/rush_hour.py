@@ -60,7 +60,7 @@ class RushHourGameNode:
             elif(orientation == 1):
                 self.gameBoard[yPos:yPos + size, xPos] = str(number)
 
-    def display_game_board(self):
+    def display_node(self):
         for row in self.gameBoard:
             for element in row:
                 print(colored((element + ' '), self.vehicleColors[str(element)]), end ='')

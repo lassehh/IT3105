@@ -6,9 +6,12 @@ from string import *
 import copy
 from csp_solver import *
 
-#
+"""
+Class: ConstraintInstance
+Contains the position of the cell involved in the constraint. The position is given as the row number and column number.
+"""
 class ConstraintInstance:
-    # References to the variables involved in the constraint
+    # Position of the variables involved in the constraint
     rowNumber = None
     colNumber = None
 
@@ -45,11 +48,14 @@ class ConstraintInstance:
         else:
             return []
 
-#
+"""
+Class: VariableInstance
+A variable is a row/column in the nonogram puzzle
+"""
 class VariableInstance:
-    type = None
-    number = None
-    domain = None
+    type = None     # either 'row' or 'col'
+    number = None   # the row or column number of the variable
+    domain = None   # list of possible domain values for the variable
 
     def __init__(self, type, number, domain):
         self.type = type
@@ -57,25 +63,27 @@ class VariableInstance:
         self.domain = domain
 
 
+"""
+Class: NonogramCspNode
+Represents the nonogram to be solved by the GAC algorithm.
+"""
 class NonogramCspNode:
-    cspSolver = None
+    cspSolver = None    # Constraint satisfaction problem solver
 
     # Internal variables
-    rows = None
-    cols = None
-    colors = None
+    rows = None         # Number of rows in the nonogram
+    cols = None         # Number of columns in the nonogram
+    colors = None       # Dictionary of colors for printing the solution
 
     # CSP variables
-    rowVariables = None
-    colVariables = None
-    constraints = None
+    rowVariables = None # List row variable instances
+    colVariables = None # List of column variable instances
+    constraints = None  # List of constraint instances
 
     # A* variables
-    start = None
-    #goal = None
-    state = None
-    parent = None
-    kids = None
+    state = None        # Unique state representing the current node in the A* search tree
+    parent = None       # The parent of the current node
+    kids = None         # The children of the current node
     g = 0
     f = 0
     h = 0
@@ -91,7 +99,6 @@ class NonogramCspNode:
         self.colVariables = []
         self.constraints = []
 
-        self.start = None
         self.goal = None
         self.state = None
         self.parent = None
@@ -102,7 +109,7 @@ class NonogramCspNode:
 
 
 
-# Description: Loads the configuration for the nonogram and builds the variables domain.
+# Description: Loads the configuration for the nonogram and builds the variables' domain.
 # Input: text document with a nonogram config, fileName
 # Output: None
     def load_nonogram_configuration(self, fileName):
@@ -156,19 +163,24 @@ class NonogramCspNode:
                 colDomain = self.compositions_to_variable_values(colCompositions, colSpec)
                 self.colVariables.append(VariableInstance('col', colNumber, colDomain))
 
-    def print_solved_nonogram(self):
+
+# Description: Displays the nonogram in the terminal window
+# Input: None
+# Output: None
+    def display_node(self):
         rows = list(self.rowVariables)
         rows.reverse()
         for row in rows:
             for values in row.domain:
                 for value in values:
-                    print(colored((str(value )+ ' '), self.colors[str(value)]), end ='')
+                    cprint(colored((str(value )+ ' '), self.colors[str(value)]), end ='')
+                print('\t', end='')
             print('')
         print('')
 
-# Description:
-# Input:
-# Output:
+# Description: Creates all necessary constraint instances for the nonogram and adds them to the list of constraints
+# Input: None
+# Output: None
     def create_all_constraints(self):
         for row in self.rowVariables:
             for col in self.colVariables:
@@ -197,9 +209,10 @@ class NonogramCspNode:
                 if(composition[0] != 0):
                     self.find_all_weak_compositions(compositionsAccumulator, composition, n, k)
 
-# Description:
-# Input:
-# Output:
+# Description: Translates the compositions found in find_all_weak_compositions to domain values.
+# Input: - list of possible compositions, compositions
+#        - segment sizes for the variable, variableSpec
+# Output: variable's domain, values
     def compositions_to_variable_values(self, compositions, variableSpec):
         values = []
         for composition in compositions:
@@ -214,9 +227,10 @@ class NonogramCspNode:
             values.append(value)
         return values
 
-# Description:
-# Input:
-# Output:
+# Description: Determines whether the CSP solver has found a solution, by calculating the current total domain size.
+#              A solution is found when all domain sizes for all variables are reduced to one.
+# Input: None
+# Output: True/False
     def is_goal(self):
         totalDomainSize = self.get_total_domain_size()
         # Check if all domain sizes are reduced to one
@@ -225,11 +239,17 @@ class NonogramCspNode:
         else:
             return False
 
+# Description: Generates successors for A* algorithm.
+#              Makes assumptions on ONE variable in the nonogram, and generates a child nonogram for each of the values
+#              that are assumed for the variable.
+#              Calls rerun (GAC algorithm) on each of the children. If the assumption proves to be valid, the child is added to the list of successors.
+# Input: None
+# Output: list of successors, successors
     def generate_successors(self):
         successors = []
         variables = self.rowVariables + self.colVariables
 
-        # Find the variable with the smallest domain
+        # Find the variable with the smallest domain (larger than one)
         smallestDomainVar = min((variable for variable in variables if len(variable.domain) > 1), key = lambda variable: len(variable.domain))
 
         # Reduce the variables domain to a singleton for every value and append it has a successor state
@@ -258,6 +278,7 @@ class NonogramCspNode:
             newSize = nonogramChildNode.get_total_domain_size()
             #TESTING
 
+            # Append to successors only if rerun was successful
             if(validReduction):
                 nonogramChildNode.state = nonogramChildNode.get_state_identifier()
                 successors.append(nonogramChildNode)
@@ -279,15 +300,6 @@ class NonogramCspNode:
             totalDomainSize += len(variable.domain)
         return totalDomainSize
 
-    def get_variable(self, spec):
-        type, number = spec
-        if type == 'col':
-            variable = self.colVariables[number]
-        elif type == 'row':
-            variable = self.rowVariables[number]
-        else:
-            raise AssertionError
-        return variable
 
     def calc_h(self):
         estimatedDistanceToGoal = self.get_total_domain_size() - self.cols - self.rows

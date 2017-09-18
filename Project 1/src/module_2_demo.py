@@ -47,14 +47,22 @@ def module_2(argv):
     astarSearch = AStar(searchType = searchType, startSearchNode = initialNonogramNode, displayMode = displayMode)
 
     # Run the GAC_A* algorithm
-    initialNonogramNode.print_solved_nonogram()
+    initialNonogramNode.display_node()
 
     gacAstarSolver = GacAstar(initialNonogramNode, cspSolver, astarSearch)
-    solution = gacAstarSolver.run(validReduction)
+    solution, numberOfMovesToSolution, searchNodesGenerated, searchNodesExpanded = gacAstarSolver.run(validReduction)
 
 
     # Print the solved nonogram
-    solution.print_solved_nonogram()
+    print('[MAIN]: Solution of "' + gameConfigFile + '":')
+    solution.display_node()
+    if numberOfMovesToSolution > -1:
+        print("[MAIN]: With " + searchType + " search, the solution includes:")
+        print("- " + str(numberOfMovesToSolution) + " moves")
+        print("- " + str(searchNodesGenerated) + " nodes generated")
+        print("- " + str(searchNodesExpanded) + " nodes expanded")
+    else:
+        print("[MAIN]: " + searchType + " was not necessary.")
 
     return 0
 

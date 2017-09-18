@@ -15,7 +15,7 @@ class GacAstar:
 
     def run(self, validReduction):
         if validReduction and not self.cspNode.is_goal():
-            solution, __, __ = self.astarSearch.best_first_search()
-            return solution
+            solution, numberOfMovesToSolution, searchNodesGenerated, searchNodesExpanded = self.astarSearch.best_first_search()
+            return solution, numberOfMovesToSolution, searchNodesGenerated, searchNodesExpanded
         else:
-            return self.cspNode
+            return self.cspNode, -1, -1, -1

@@ -43,7 +43,7 @@ class AStar:
 				if (userInputDisplayOption == "y"):
 					self.displayMode = True
 					print('[DISPLAY_MODE]: Current board state: ')
-					x.display_game_board()
+					x.display_node()
 				else:
 					self.displayMode = False
 
@@ -51,7 +51,7 @@ class AStar:
 			if x.is_goal():
 				costFromStartToGoal = self.get_number_of_moves(x)
 				self.displaySolutionPath(x, costFromStartToGoal)
-				return x, costFromStartToGoal, self.searchNodesGenerated
+				return x, costFromStartToGoal, self.searchNodesGenerated, self.searchNodesExpanded
 
 			successors = x.generate_successors()
 			self.searchNodesExpanded += 1
@@ -68,7 +68,7 @@ class AStar:
 					self.attach_and_eval(s, x)
 					if s in self.closedList:
 						self.propagate_path_improvements(s)
-		return [], -1, self.searchNodesGenerated
+		return [], -1, self.searchNodesGenerated, self.searchNodesExpanded
 
 	def search_queue_pop(self, searchType, queue):  #
 		if searchType == "BFS":  # Breadth First Search
@@ -111,6 +111,6 @@ class AStar:
 			while (stopDisplaying != True):
 				print('[DISPLAY_MODE]: Move/board state: ' + str(move))
 				move -= 1
-				solutionNode.display_game_board()
+				solutionNode.display_node()
 				if (solutionNode.parent == None): stopDisplaying = True
 				solutionNode = solutionNode.parent
