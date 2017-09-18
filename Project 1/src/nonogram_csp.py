@@ -8,22 +8,25 @@ from csp_solver import *
 
 #
 class ConstraintInstance:
-    rowVariableInstance = None
-    colVariableInstance = None
+    # References to the variables involved in the constraint
+    rowNumber = None
+    colNumber = None
 
     def __init__(self, rowVariableInstance, colVariableInstance):
-        self.rowVariableInstance = rowVariableInstance
-        self.colVariableInstance = colVariableInstance
+        self.rowNumber = rowVariableInstance
+        self.colNumber = colVariableInstance
 
-    def get_all_variables(self):
-        allVariables = [self.rowVariableInstance, self.colVariableInstance]
+    def get_all_variables(self, problemObject):
+        allVariables = [problemObject.rowVariables[self.rowNumber], problemObject.colVariables[self.colNumber]]
         return allVariables
 
-    def get_non_focal_variable(self, focalVariable):
-        if (focalVariable == self.rowVariableInstance):
-            nonFocalVariable = self.colVariableInstance
+    def get_non_focal_variable(self, focalVariable, problemObject):
+        if (focalVariable.number == self.rowNumber and focalVariable.type == 'row'):
+            nonFocalVariable = problemObject.colVariables[self.colNumber]
+        elif (focalVariable.number == self.colNumber and focalVariable.type == 'col'):
+            nonFocalVariable = problemObject.rowVariables[self.rowNumber]
         else:
-            nonFocalVariable = self.rowVariableInstance
+            raise AssertionError
         return nonFocalVariable
 
     def satisfied(self, value, domainValue, focalVariable):
@@ -32,11 +35,8 @@ class ConstraintInstance:
         else:
             return False
 
-    def get_pruning_values(self, focalVariable):
-        if(focalVariable == self.rowVariableInstance):
-            nonFocalVariable = self.colVariableInstance
-        else:
-            nonFocalVariable = self.rowVariableInstance
+    def get_pruning_values(self, focalVariable, problemObject):
+        nonFocalVariable = self.get_non_focal_variable(focalVariable, problemObject)
 
         if all(domainValue[nonFocalVariable.number] == 0 for domainValue in focalVariable.domain):
             return [0]
@@ -63,6 +63,7 @@ class NonogramCspNode:
     # Internal variables
     rows = None
     cols = None
+    colors = None
 
     # CSP variables
     rowVariables = None
@@ -84,6 +85,7 @@ class NonogramCspNode:
 
         self.rows = None
         self.cols = None
+        self.colors = {("0"): "white", ("1"): "red"}
 
         self.rowVariables = []
         self.colVariables = []
@@ -154,13 +156,23 @@ class NonogramCspNode:
                 colDomain = self.compositions_to_variable_values(colCompositions, colSpec)
                 self.colVariables.append(VariableInstance('col', colNumber, colDomain))
 
+    def print_solved_nonogram(self):
+        rows = list(self.rowVariables)
+        rows.reverse()
+        for row in rows:
+            for values in row.domain:
+                for value in values:
+                    print(colored((str(value )+ ' '), self.colors[str(value)]), end ='')
+            print('')
+        print('')
+
 # Description:
 # Input:
 # Output:
     def create_all_constraints(self):
         for row in self.rowVariables:
             for col in self.colVariables:
-                constraintInstance = ConstraintInstance(row, col)
+                constraintInstance = ConstraintInstance(row.number, col.number)
                 self.constraints.append(constraintInstance)
 
 
@@ -223,12 +235,15 @@ class NonogramCspNode:
         # Reduce the variables domain to a singleton for every value and append it has a successor state
         for domainValue in smallestDomainVar.domain:
             # Create a copy to modify, only needs deepcopy of the variables
-            nonogramChildNode = NonogramCspNode(self.cspSolver)
+            cspSolver = GAC()
+            nonogramChildNode = NonogramCspNode(cspSolver)
             nonogramChildNode.rowVariables = copy.deepcopy(self.rowVariables)
             nonogramChildNode.colVariables = copy.deepcopy(self.colVariables)
             nonogramChildNode.constraints = self.constraints
             nonogramChildNode.rows = self.rows
             nonogramChildNode.cols = self.cols
+
+            cspSolver.set_problem_ref(nonogramChildNode)
 
             if(smallestDomainVar.type == 'col'):
                 childSmallestDomainVar = nonogramChildNode.colVariables[smallestDomainVar.number]
@@ -237,7 +252,12 @@ class NonogramCspNode:
                 childSmallestDomainVar = nonogramChildNode.rowVariables[smallestDomainVar.number]
                 childSmallestDomainVar.domain = [domainValue]
 
+            #TESTING
+            oldSize = nonogramChildNode.get_total_domain_size()
             validReduction = nonogramChildNode.cspSolver.rerun(childSmallestDomainVar)
+            newSize = nonogramChildNode.get_total_domain_size()
+            #TESTING
+
             if(validReduction):
                 nonogramChildNode.state = nonogramChildNode.get_state_identifier()
                 successors.append(nonogramChildNode)
@@ -259,6 +279,15 @@ class NonogramCspNode:
             totalDomainSize += len(variable.domain)
         return totalDomainSize
 
+    def get_variable(self, spec):
+        type, number = spec
+        if type == 'col':
+            variable = self.colVariables[number]
+        elif type == 'row':
+            variable = self.rowVariables[number]
+        else:
+            raise AssertionError
+        return variable
 
     def calc_h(self):
         estimatedDistanceToGoal = self.get_total_domain_size() - self.cols - self.rows

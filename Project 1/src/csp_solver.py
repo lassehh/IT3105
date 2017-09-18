@@ -5,8 +5,8 @@ import colorama
 from string import *
 
 class Arc:
-    focalVariable = None
-    constraint = None
+    focalVariable = None        # Reference to the variable
+    constraint = None           # Reference to the constraint
 
     def __init__(self, focalVariable, constraint):
         self.focalVariable = focalVariable
@@ -15,18 +15,21 @@ class Arc:
 
 class GAC:
     queue = None
-    cspConstraints = None
+    problemRef = None
 
     def __init__(self):
         self.queue = []
 
-    def initialization(self, cspConstraints):
-        for constraint in cspConstraints:
-            variables = constraint.get_all_variables()
+    def initialization(self, problemObject):
+        for constraint in problemObject.constraints:
+            variables = constraint.get_all_variables(problemObject)
             for variable in variables:
                 arc = Arc(focalVariable = variable, constraint = constraint)
                 self.queue.append(arc)
-        self.cspConstraints = cspConstraints
+        self.problemRef = problemObject
+
+    def set_problem_ref(self, problemObject):
+        self.problemRef = problemObject
 
     def domain_filtering_loop(self):
         while self.queue:
@@ -39,8 +42,8 @@ class GAC:
 
     def add_all_neighboring_arcs(self, arc):
         focalVariable, prevConstraint = arc.focalVariable, arc.constraint
-        for constraint in self.cspConstraints:
-            allVariables = constraint.get_all_variables()
+        for constraint in self.problemRef.constraints:
+            allVariables = constraint.get_all_variables(self.problemRef)
             if(focalVariable in allVariables):
                 for variable in allVariables:
                     if(variable != focalVariable and constraint != prevConstraint):
@@ -50,22 +53,22 @@ class GAC:
     def revise(self, arc):
         revised = False
         focalVariable, constraint = arc.focalVariable, arc.constraint
-        nonFocalVariable = constraint.get_non_focal_variable(focalVariable)
+        nonFocalVariable = constraint.get_non_focal_variable(focalVariable, self.problemRef)
 
-        pruningValues = constraint.get_pruning_values(focalVariable)
+        pruningValues = constraint.get_pruning_values(nonFocalVariable, self.problemRef)
         if(pruningValues):
             for value in pruningValues:
-                nonFocalVariableDomainCopy = list(nonFocalVariable.domain)
-                for domainValue in nonFocalVariableDomainCopy:
-                    satisfied = constraint.satisfied(value, domainValue, focalVariable)
+                focalVariableDomainCopy = list(focalVariable.domain)
+                for domainValue in focalVariableDomainCopy:
+                    satisfied = constraint.satisfied(value, domainValue, nonFocalVariable)
                     if not satisfied:
-                        nonFocalVariable.domain.remove(domainValue)
+                        focalVariable.domain.remove(domainValue)
                         revised = True
         return revised
 
     def rerun(self, focalVariable):
-        for constraint in self.cspConstraints:
-            allVariables = constraint.get_all_variables()
+        for constraint in self.problemRef.constraints:
+            allVariables = constraint.get_all_variables(self.problemRef)
             if (focalVariable in allVariables):
                 for variable in allVariables:
                     if (variable != focalVariable):

@@ -63,7 +63,6 @@ class RushHourGameNode:
     def display_game_board(self):
         for row in self.gameBoard:
             for element in row:
-                #if (element) in self.vehicleColors:
                 print(colored((element + ' '), self.vehicleColors[str(element)]), end ='')
             print('')
         print('')

@@ -30,7 +30,7 @@ def module_2(argv):
     initialNonogramNode.load_nonogram_configuration(gameConfigFile)
     initialNonogramNode.create_all_constraints()
     endLoadConfigTime = time.clock()
-    cspSolver.initialization(cspConstraints = initialNonogramNode.constraints)
+    cspSolver.initialization(problemObject = initialNonogramNode)
     print('[MAIN]: Loading the config took: ', endLoadConfigTime - startLoadConfigTime, ' seconds.')
 
     # Find total domain size before using the solver
@@ -47,10 +47,14 @@ def module_2(argv):
     astarSearch = AStar(searchType = searchType, startSearchNode = initialNonogramNode, displayMode = displayMode)
 
     # Run the GAC_A* algorithm
+    initialNonogramNode.print_solved_nonogram()
+
     gacAstarSolver = GacAstar(initialNonogramNode, cspSolver, astarSearch)
-    gacAstarSolver.run(validReduction)
+    solution = gacAstarSolver.run(validReduction)
 
 
+    # Print the solved nonogram
+    solution.print_solved_nonogram()
 
     return 0
 
