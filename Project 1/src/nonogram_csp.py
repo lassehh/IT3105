@@ -268,11 +268,7 @@ class NonogramCspNode:
                 childSmallestDomainVar = nonogramChildNode.rowVariables[smallestDomainVar.number]
                 childSmallestDomainVar.domain = [domainValue]
 
-            #TESTING
-            oldSize = nonogramChildNode.get_total_domain_size()
             validReduction = cspSolver.rerun(childSmallestDomainVar)
-            newSize = nonogramChildNode.get_total_domain_size()
-            #TESTING
 
             # Append to successors only if rerun was successful
             if(validReduction):

@@ -24,24 +24,27 @@ def module_2(argv):
     initialNonogramNode = NonogramCspNode()
 
     # Generate the initial state, where each variable has its full domain
-    startLoadConfigTime = time.clock()
+    startTime = time.clock()
     initialNonogramNode.load_nonogram_configuration(gameConfigFile)
     initialNonogramNode.create_all_constraints()
-    endLoadConfigTime = time.clock()
+    endTime = time.clock()
 
     # Refine the nonogram node by running initialization and domain_filtering_loop on the csp
     cspSolver.initialization(problemObject = initialNonogramNode)
-    print('[MAIN]: Loading the config took: ', endLoadConfigTime - startLoadConfigTime, ' seconds.')
+    print('[MAIN]: Loading the config took: ', endTime - startTime, ' seconds.')
 
     # Run the csp-solver on the csp with domain filtering
+    startTime = time.clock()
     validReduction = cspSolver.domain_filtering_loop()
-
+    endTime = time.clock()
+    print('[MAIN]: Domain-filtering the nonogram took: ', endTime - startTime, ' seconds.')
 
     # Create and initialize an astar-search
     initialNonogramNode.state = initialNonogramNode.get_state_identifier()
     astarSearch = AStar(searchType = searchType, startSearchNode = initialNonogramNode, displayMode = displayMode)
 
     # Display the result after running the csp solver
+    print('[MAIN]: Nonogram after domain filtering: ')
     initialNonogramNode.display_node()
 
     # Run the GAC_A* algorithm (if the refined nonogram node is neither a contradictory state nor a solution)
@@ -58,7 +61,7 @@ def module_2(argv):
         print("- " + str(searchNodesGenerated) + " nodes generated")
         print("- " + str(searchNodesExpanded) + " nodes expanded")
     else:
-        print("[MAIN]: " + searchType + " was not necessary.")
+        print("[MAIN]: A* with " + searchType + " was not necessary.")
 
     return 0
 
