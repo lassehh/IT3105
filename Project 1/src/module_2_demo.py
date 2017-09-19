@@ -1,12 +1,10 @@
-import numpy
 import sys
 import time
-from termcolor import colored
 import colorama
-from nonogram_csp import *
-from astar_search import *
-from csp_solver import *
-from gac_and_astar import *
+from nonogram_csp import NonogramCspNode
+from astar_search import AStar
+from csp_solver import GAC
+from gac_and_astar import GacAstar
 
 def module_2(argv):
     # Initialize color prints
@@ -23,33 +21,31 @@ def module_2(argv):
 
     # Create a nonogram and a solver
     cspSolver = GAC()
-    initialNonogramNode = NonogramCspNode(cspSolver = cspSolver)
+    initialNonogramNode = NonogramCspNode()
 
-    # Initialize the csp and solver
+    # Generate the initial state, where each variable has its full domain
     startLoadConfigTime = time.clock()
     initialNonogramNode.load_nonogram_configuration(gameConfigFile)
     initialNonogramNode.create_all_constraints()
     endLoadConfigTime = time.clock()
+
+    # Refine the nonogram node by running initialization and domain_filtering_loop on the csp
     cspSolver.initialization(problemObject = initialNonogramNode)
     print('[MAIN]: Loading the config took: ', endLoadConfigTime - startLoadConfigTime, ' seconds.')
-
-    # Find total domain size before using the solver
-    oldTotalSize = initialNonogramNode.get_total_domain_size()
 
     # Run the csp-solver on the csp with domain filtering
     validReduction = cspSolver.domain_filtering_loop()
 
-    # Find total domain size before using the solver
-    newTotalSize = initialNonogramNode.get_total_domain_size()
 
     # Create and initialize an astar-search
     initialNonogramNode.state = initialNonogramNode.get_state_identifier()
     astarSearch = AStar(searchType = searchType, startSearchNode = initialNonogramNode, displayMode = displayMode)
 
-    # Run the GAC_A* algorithm
+    # Display the result after running the csp solver
     initialNonogramNode.display_node()
 
-    gacAstarSolver = GacAstar(initialNonogramNode, cspSolver, astarSearch)
+    # Run the GAC_A* algorithm (if the refined nonogram node is neither a contradictory state nor a solution)
+    gacAstarSolver = GacAstar(initialNonogramNode, astarSearch)
     solution, numberOfMovesToSolution, searchNodesGenerated, searchNodesExpanded = gacAstarSolver.run(validReduction)
 
 

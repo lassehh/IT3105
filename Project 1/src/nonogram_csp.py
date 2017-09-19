@@ -1,10 +1,6 @@
-import sys
-import numpy as np
 from termcolor import colored, cprint
-import colorama
-from string import *
 import copy
-from csp_solver import *
+from csp_solver import GAC
 
 """
 Class: ConstraintInstance
@@ -68,7 +64,6 @@ Class: NonogramCspNode
 Represents the nonogram to be solved by the GAC algorithm.
 """
 class NonogramCspNode:
-    cspSolver = None    # Constraint satisfaction problem solver
 
     # Internal variables
     rows = None         # Number of rows in the nonogram
@@ -88,8 +83,8 @@ class NonogramCspNode:
     f = 0
     h = 0
 
-    def __init__(self, cspSolver):
-        self.cspSolver = cspSolver
+    def __init__(self): #, cspSolver):
+        #self.cspSolver = cspSolver
 
         self.rows = None
         self.cols = None
@@ -230,7 +225,7 @@ class NonogramCspNode:
 # Description: Determines whether the CSP solver has found a solution, by calculating the current total domain size.
 #              A solution is found when all domain sizes for all variables are reduced to one.
 # Input: None
-# Output: True/False
+# Output: True if a solution is found, False otherwise
     def is_goal(self):
         totalDomainSize = self.get_total_domain_size()
         # Check if all domain sizes are reduced to one
@@ -252,17 +247,18 @@ class NonogramCspNode:
         # Find the variable with the smallest domain (larger than one)
         smallestDomainVar = min((variable for variable in variables if len(variable.domain) > 1), key = lambda variable: len(variable.domain))
 
-        # Reduce the variables domain to a singleton for every value and append it has a successor state
+        # Reduce the variables domain to a singleton for every value and append it as a successor state
         for domainValue in smallestDomainVar.domain:
             # Create a copy to modify, only needs deepcopy of the variables
-            cspSolver = GAC()
-            nonogramChildNode = NonogramCspNode(cspSolver)
+            nonogramChildNode = NonogramCspNode()
             nonogramChildNode.rowVariables = copy.deepcopy(self.rowVariables)
             nonogramChildNode.colVariables = copy.deepcopy(self.colVariables)
             nonogramChildNode.constraints = self.constraints
             nonogramChildNode.rows = self.rows
             nonogramChildNode.cols = self.cols
 
+            # Create new csp solver for the child node
+            cspSolver = GAC()
             cspSolver.set_problem_ref(nonogramChildNode)
 
             if(smallestDomainVar.type == 'col'):
@@ -274,7 +270,7 @@ class NonogramCspNode:
 
             #TESTING
             oldSize = nonogramChildNode.get_total_domain_size()
-            validReduction = nonogramChildNode.cspSolver.rerun(childSmallestDomainVar)
+            validReduction = cspSolver.rerun(childSmallestDomainVar)
             newSize = nonogramChildNode.get_total_domain_size()
             #TESTING
 
