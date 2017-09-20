@@ -22,7 +22,6 @@ class GAC:
     def __init__(self):
         self.queue = []
 
-
 # Description: appends all arcs to the queue
 # Input: Reference to the problem that GAC tries to solve, problemObject
 # Output: None

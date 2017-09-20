@@ -1,7 +1,7 @@
 
 """
 Class: AStar
-Impelements a general A* algorithm
+Implements a general A* algorithm
 """
 class AStar:
 	createdDict = None  			# Dictionary containing all nodes created
@@ -43,7 +43,6 @@ class AStar:
 		while (self.openList):
 			x = self.search_queue_pop(self.searchType, self.openList)
 			self.closedList.append(x)
-
 			# Display mode
 			if (self.displayMode == True):
 				userInputDisplayOption = input("[DISPLAY_MODE]: Continue with display mode? (y/n) ")

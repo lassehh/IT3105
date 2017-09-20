@@ -4,6 +4,11 @@ from termcolor import colored, cprint
 import colorama
 from string import *
 
+
+"""
+Class: RushHourGameNode
+Represents a state in a rush hour game with board and vehicles.
+"""
 class RushHourGameNode:
     # Internal variables
     gameBoard = None
