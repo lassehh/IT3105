@@ -42,9 +42,9 @@ class RushHourGameNode:
         self.kids = []
         self.g = 0
 
-    # Description:
-    # Input:
-    # Output:
+    # Description: Loads the configuration of vehicles in a puzzle
+    # Input: file holding the configuration info, fileName
+    # Output: None
     def load_game_configuration(self, fileName):
         with open('../rush_hour_game_configurations/' + fileName + '.txt', 'r') as f:
             for line in f:
@@ -56,9 +56,9 @@ class RushHourGameNode:
                 self.vehicles.append(currentLine)
                 self.numberOfVehicles += 1
 
-    # Description:
-    # Input:
-    # Output:
+    # Description: Draws the game board based on the position of the vehicles
+    # Input: None
+    # Output: None
     def update_game_board(self):
         self.gameBoard = np.zeros(shape = self.gameBoardSize, dtype = object)
         self.gameBoard[:] = 'x'
@@ -69,9 +69,9 @@ class RushHourGameNode:
             elif(orientation == 1):
                 self.gameBoard[yPos:yPos + size, xPos] = str(number)
 
-    # Description:
-    # Input:
-    # Output:
+    # Description: Displays the game board
+    # Input: None
+    # Output: None
     def display_node(self):
         for row in self.gameBoard:
             for element in row:
@@ -79,18 +79,21 @@ class RushHourGameNode:
             print('')
         print('')
 
-    # Description:
-    # Input:
-    # Output:
+    # Description: Returns an unique state identifier for the rush hour game state
+    # Input: the vehicles on the board, vehicles
+    # Output: The unique state identfier, uniqueStateIdentifier
     def get_state_identifier(self, vehicles):
-        state = ''
+        uniqueStateIdentifier = ''
         for vehicle in vehicles:
-            state = state + str(vehicle[2]) + str(vehicle[3])
-        return state
+            uniqueStateIdentifier = uniqueStateIdentifier + str(vehicle[2]) + str(vehicle[3])
+        return uniqueStateIdentifier
 
-    # Description:
-    # Input:
-    # Output:
+    # Description: Evaluates a game state to estimate how many steps it's away from the solution.
+    #              Adds 1 steps for each vehicle blocking car-0, and the distance from car-0 to the goal
+    #              square (5,3). Saves the result to self.h. Sets self.h = 1 if it estimates the solution
+    #              to be less than 1 step away (to secure an admissable heuristic).
+    # Input: None
+    # Output: None
     def calc_h(self):
         estimatedMovesToSolution = 0
         objectiveVehicle = self.vehicles[0]
@@ -108,15 +111,15 @@ class RushHourGameNode:
         else:
             self.h = estimatedMovesToSolution
 
-    # Description:
+    # Description: Returns the cost of moving from one state to another.
     # Input:
-    # Output:
+    # Output: 1
     def arc_cost(self, childNode):
         return 1
 
-    # Description:
+    # Description: Evaluates the current game state to identify if it's the solution
     # Input:
-    # Output:
+    # Output: True/False
     def is_goal(self):
         objectiveVehicle = self.vehicles[0]
         xPos, yPos, size = objectiveVehicle[2], objectiveVehicle[3], objectiveVehicle[4]
@@ -126,9 +129,14 @@ class RushHourGameNode:
         else:
             return False
 
-    # Description:
-    # Input:
-    # Output:
+    # Description: Iterates through every vehicle on the board, finding feasible moves, and for every one feasible
+    #              move create a new game node with the new move made on the game board and finally appending this to
+    #              the successors list. Horizontal vehicles may move left and right, vertical vehicles up and down.
+    #
+    #              To move an vehicle the neighboring square must not already be occupied by a vehicle or be outside
+    #              the board.
+    # Input: None
+    # Output: Nodes with the new feasible moves made on them, succesors
     def generate_successors(self):
         successors = []
         for vehicle in self.vehicles:
