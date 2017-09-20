@@ -66,7 +66,7 @@ class GAC:
     def revise(self, arc):
         revised = False
         focalVariable, constraint = arc.focalVariable, arc.constraint
-        nonFocalVariable = constraint.get_non_focal_variable(focalVariable, self.problemRef)
+        nonFocalVariable = constraint.get_non_focal_variables(focalVariable, self.problemRef)
 
         pruningValues = constraint.get_pruning_values(nonFocalVariable, self.problemRef)
         if(pruningValues):
@@ -92,3 +92,4 @@ class GAC:
                         self.queue.append(arc)
         validReduction = self.domain_filtering_loop()
         return validReduction
+    

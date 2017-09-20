@@ -1,7 +1,6 @@
 from termcolor import colored, cprint
 import copy
 from csp_solver import GAC
-import gc
 
 """
 Class: ConstraintInstance
@@ -16,11 +15,18 @@ class ConstraintInstance:
         self.rowNumber = rowVariableInstance
         self.colNumber = colVariableInstance
 
+    # Description: Returns all the variables involved in the constraint
+    # Input: reference to a nonogram csp node
+    # Output: allVariables
     def get_all_variables(self, problemObject):
         allVariables = [problemObject.rowVariables[self.rowNumber], problemObject.colVariables[self.colNumber]]
         return allVariables
 
-    def get_non_focal_variable(self, focalVariable, problemObject):
+    # Description: Returns all the non-focal variables involved in the constraint given a focal variable and a reference
+    #               to a nonogram csp node. For this implementation the it's only one non-focal variable
+    # Input: focalVariable, reference to a nonogram csp node problemObject
+    # Output: all the non-focal variables, nonFocalVariables
+    def get_non_focal_variables(self, focalVariable, problemObject):
         if (focalVariable.number == self.rowNumber and focalVariable.type == 'row'):
             nonFocalVariable = problemObject.colVariables[self.colNumber]
         elif (focalVariable.number == self.colNumber and focalVariable.type == 'col'):
@@ -29,14 +35,23 @@ class ConstraintInstance:
             raise AssertionError
         return nonFocalVariable
 
+    # Description: Evaluates a constraint to find if a given value in a domainValue satisfy the domainValue
+    #               for the focalVariable
+    # Input: - a specfic value in the domainValue, value
+    #        - a possible value for the variable, domainValue
+    #        - variable to evaluate, focalVariable
+    # Output: allVariables
     def satisfied(self, value, domainValue, focalVariable):
         if(value == domainValue[focalVariable.number]):
             return True
         else:
             return False
 
+    # Description: Returns all the domain values that can be used to possibly reduce another variables domain
+    # Input: focalVariable, reference to the nonogram csp node problemObject
+    # Output: Returns the domain values that can be used
     def get_pruning_values(self, focalVariable, problemObject):
-        nonFocalVariable = self.get_non_focal_variable(focalVariable, problemObject)
+        nonFocalVariable = self.get_non_focal_variables(focalVariable, problemObject)
 
         if all(domainValue[nonFocalVariable.number] == 0 for domainValue in focalVariable.domain):
             return [0]
@@ -84,9 +99,7 @@ class NonogramCspNode:
     f = 0
     h = 0
 
-    def __init__(self): #, cspSolver):
-        #self.cspSolver = cspSolver
-
+    def __init__(self):
         self.rows = None
         self.cols = None
         self.colors = {("0"): "white", ("1"): "red"}
@@ -104,10 +117,13 @@ class NonogramCspNode:
         self.h = 0
 
 
+    """
+    CSP specific functions:
+    """
 
-# Description: Loads the configuration for the nonogram and builds the variables' domain.
-# Input: text document with a nonogram config, fileName
-# Output: None
+    # Description: Loads the configuration for the nonogram and builds the variables' domain.
+    # Input: text document with a nonogram config, fileName
+    # Output: None
     def load_nonogram_configuration(self, fileName):
         with open('../nonograms_configurations/' + fileName + '.txt', 'r') as f:
             # Read nonogram size
@@ -135,7 +151,7 @@ class NonogramCspNode:
                 rowCompositionsLookupTable.add(initialCompositionString)
 
                 # Find all compositions
-                if(maxSegmentMoves != 0):
+                if (maxSegmentMoves != 0):
                     self.find_all_weak_compositions(rowCompositions, rowCompositionsLookupTable, initialComposition,
                                                     maxSegmentMoves, compositionRestrictionLength)
 
@@ -147,7 +163,7 @@ class NonogramCspNode:
                 # Read column specifications from file
                 colSpec = f.readline().split(" ")
                 colSpec = [int(x) for x in colSpec]
-                colSpec.reverse() # to get the correct order according to the exercise text
+                colSpec.reverse()  # to get the correct order according to the exercise text
 
                 # Translate to a compositions-problem
                 minTotalSegmentLength = sum(colSpec) + len(colSpec) - 1
@@ -173,10 +189,9 @@ class NonogramCspNode:
                 colDomain = self.compositions_to_variable_values(colCompositions, colSpec)
                 self.colVariables.append(VariableInstance('col', colNumber, colDomain))
 
-
-# Description: Displays the nonogram in the terminal window
-# Input: None
-# Output: None
+    # Description: Displays the nonogram in the terminal window
+    # Input: None
+    # Output: None
     def display_node(self):
         rows = list(self.rowVariables)
         rows.reverse()
@@ -188,9 +203,9 @@ class NonogramCspNode:
             print('')
         print('')
 
-# Description: Creates all necessary constraint instances for the nonogram and adds them to the list of constraints
-# Input: None
-# Output: None
+    # Description: Creates all necessary constraint instances for the nonogram and adds them to the list of constraints
+    # Input: None
+    # Output: None
     def create_all_constraints(self):
         for row in self.rowVariables:
             for col in self.colVariables:
@@ -198,10 +213,10 @@ class NonogramCspNode:
                 self.constraints.append(constraintInstance)
 
 
-# Description: Finds all possible (restricted) weak compositions of the number n with k parts.
-#             Continuously appends the compositions to the storage.
-# Input: storage compositionsAccumulator, parentNode parentComposition, number n, parts k
-# Output: 0
+    # Description: Finds all possible (restricted) weak compositions of the number n with k parts.
+    #             Continuously appends the compositions to the storage.
+    # Input: storage compositionsAccumulator, parentNode parentComposition, number n, parts k
+    # Output: 0
     def find_all_weak_compositions(self, compositionsAccumulator, compositionsLookup, parentComposition, n, k):
         newCompositions = []
         for i in range(1, k):
@@ -218,10 +233,10 @@ class NonogramCspNode:
                 if(composition[0] != 0):
                     self.find_all_weak_compositions(compositionsAccumulator, compositionsLookup, composition, n, k)
 
-# Description: Translates the compositions found in find_all_weak_compositions to domain values.
-# Input: - list of possible compositions, compositions
-#        - segment sizes for the variable, variableSpec
-# Output: variable's domain, values
+    # Description: Translates the compositions found in find_all_weak_compositions to domain values.
+    # Input: - list of possible compositions, compositions
+    #        - segment sizes for the variable, variableSpec
+    # Output: variable's domain, values
     def compositions_to_variable_values(self, compositions, variableSpec):
         values = []
         for composition in compositions:
@@ -236,10 +251,16 @@ class NonogramCspNode:
             values.append(value)
         return values
 
-# Description: Determines whether the CSP solver has found a solution, by calculating the current total domain size.
-#              A solution is found when all domain sizes for all variables are reduced to one.
-# Input: None
-# Output: True if a solution is found, False otherwise
+
+
+    """
+    A* specific functions:
+    """
+
+    # Description: Determines whether the CSP solver has found a solution, by calculating the current total domain size.
+    #              A solution is found when all domain sizes for all variables are reduced to one.
+    # Input: None
+    # Output: True if a solution is found, False otherwise
     def is_goal(self):
         totalDomainSize = self.get_total_domain_size()
         # Check if all domain sizes are reduced to one
@@ -248,18 +269,19 @@ class NonogramCspNode:
         else:
             return False
 
-# Description: Generates successors for A* algorithm.
-#              Makes assumptions on ONE variable in the nonogram, and generates a child nonogram for each of the values
-#              that are assumed for the variable.
-#              Calls rerun (GAC algorithm) on each of the children. If the assumption proves to be valid, the child is added to the list of successors.
-# Input: None
-# Output: list of successors, successors
+    # Description: Generates successors for A* algorithm.
+    #              Makes assumptions on ONE variable in the nonogram, and generates a child nonogram for each of the values
+    #              that are assumed for the variable.
+    #              Calls rerun (GAC algorithm) on each of the children. If the assumption proves to be valid, the child is added to the list of successors.
+    # Input: None
+    # Output: list of successors, successors
     def generate_successors(self):
         successors = []
         variables = self.rowVariables + self.colVariables
 
         # Find the variable with the smallest domain (larger than one)
-        smallestDomainVar = min((variable for variable in variables if len(variable.domain) > 1), key = lambda variable: len(variable.domain))
+        smallestDomainVar = min((variable for variable in variables if len(variable.domain) > 1),
+                                key=lambda variable: len(variable.domain))
 
         # Reduce the variables domain to a singleton for every value and append it as a successor state
         for domainValue in smallestDomainVar.domain:
@@ -275,7 +297,7 @@ class NonogramCspNode:
             cspSolver = GAC()
             cspSolver.set_problem_ref(nonogramChildNode)
 
-            if(smallestDomainVar.type == 'col'):
+            if (smallestDomainVar.type == 'col'):
                 childSmallestDomainVar = nonogramChildNode.colVariables[smallestDomainVar.number]
                 childSmallestDomainVar.domain = [domainValue]
             else:
@@ -285,19 +307,25 @@ class NonogramCspNode:
             validReduction = cspSolver.rerun(childSmallestDomainVar)
 
             # Append to successors only if rerun was successful
-            if(validReduction):
+            if (validReduction):
                 nonogramChildNode.state = nonogramChildNode.get_state_identifier()
                 successors.append(nonogramChildNode)
         return successors
 
+    # Description: Returns an unique state identifier for a nonogram node
+    # Input: None
+    # Output: String cspIdentifier
     def get_state_identifier(self):
-        csp_identifier = ''
+        cspIdentifier = ''
         variables = self.rowVariables + self.colVariables
         for variable in variables:
             for vector in variable.domain:
-                csp_identifier += ''.join(map(str, vector))
-        return csp_identifier
+                cspIdentifier += ''.join(map(str, vector))
+        return cspIdentifier
 
+    # Description: Finds the sum of all elements in each domain for every variable
+    # Input: None
+    # Output: total remaining values across all variables totalDomainSize
     def get_total_domain_size(self):
         totalDomainSize = 0
         for variable in self.rowVariables:
@@ -306,7 +334,9 @@ class NonogramCspNode:
             totalDomainSize += len(variable.domain)
         return totalDomainSize
 
-
+    # Description: Evaluates a node
+    # Input: None
+    # Output: String cspIdentifier
     def calc_h(self):
         estimatedDistanceToGoal = self.get_total_domain_size() - self.cols - self.rows
         if (estimatedDistanceToGoal <= 0):

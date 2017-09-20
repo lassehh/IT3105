@@ -1,11 +1,16 @@
+
+"""
+Class: AStar
+Impelements a general A* algorithm
+"""
 class AStar:
 	createdDict = None  			# Dictionary containing all nodes created
 	openList = []  				    # Nodes in the queue not yet visited
 	closedList = []  				# Visited nodes
-	n0 = None
-	start = None
-	searchType = None
-	displayMode = None
+	n0 = None						# Initial node
+	start = None					# Start node
+	searchType = None				# How to pop elements from the queue
+	displayMode = None				# Controls the displaying mode of the algorithm
 
 	searchNodesGenerated = None
 	searchNodesExpanded = None
@@ -22,7 +27,9 @@ class AStar:
 		self.searchNodesExpanded = 0
 		self.costFromStartToGoal = 0
 
-
+	# Description: The main loop of the algorithm
+	# Input: None
+	# Output: solution node x, costFromStartToGoal, searchNodesGenerated, searchNodesExpanded
 	def best_first_search(self):
 		self.n0 = self.start
 		self.n0.g = 0
@@ -70,24 +77,33 @@ class AStar:
 						self.propagate_path_improvements(s)
 		return [], -1, self.searchNodesGenerated, self.searchNodesExpanded
 
+	# Description: Pops the queue based on which search type is used
+	# Input: searchType, queue
+	# Output: the node poped, currentNode
 	def search_queue_pop(self, searchType, queue):  #
 		if searchType == "BFS":  # Breadth First Search
 			return queue.pop(0)
 		elif searchType == "DFS":  # Depth First Search
 			return queue.pop()
 		elif searchType == "BestFS":  # Best First Search
-			current_node = min(queue, key=lambda x: x.f)
-			queue.remove(current_node)
-			return current_node
+			currentNode = min(queue, key=lambda x: x.f)
+			queue.remove(currentNode)
+			return currentNode
 		else:
 			raise NotImplementedError
 
+	# Description: Evaluates a child node
+	# Input: child c, parent p,
+	# Output: None
 	def attach_and_eval(self, c, p):
 		c.parent = p
 		c.g = p.g + p.arc_cost(c)
 		c.calc_h()
 		c.f = c.g + c.h
 
+	# Description: Recursively investigates if there exists a better path between parent and children
+	# Input: parent p
+	# Output: None
 	def propagate_path_improvements(self, p):
 		for c in p.kids:
 			if p.g + p.arc_cost(c) < c.g:
@@ -96,6 +112,9 @@ class AStar:
 				c.f = c.g + c.h
 				self.propagate_path_improvements(c)
 
+	# Description: Finds the total numbers steps from the start to the solutiion
+	# Input: solutionnode
+	# Output: numberOfMoves
 	def get_number_of_moves(self, solutionNode):
 		numberOfMoves = 0
 		while(solutionNode.parent != None):
@@ -103,14 +122,17 @@ class AStar:
 			solutionNode = solutionNode.parent
 		return numberOfMoves
 
-	def displaySolutionPath(self, solutionNode, movesToSolution):
+	# Description: Display the path taken by the algorithm from start to solution
+	# Input: solutionNode, stepsToSolution
+	# Output: None
+	def displaySolutionPath(self, solutionNode, stepsToSolution):
 		userInputDisplaySolutionPath = input("[DISPLAY_MODE]: Display the solution path? (y/n) ")
 		stopDisplaying = False
-		move = movesToSolution
+		step = stepsToSolution
 		if (userInputDisplaySolutionPath == 'y'):
 			while (stopDisplaying != True):
-				print('[DISPLAY_MODE]: Move/board state: ' + str(move))
-				move -= 1
+				print('[DISPLAY_MODE]: Move/board state: ' + str(step))
+				step -= 1
 				solutionNode.display_node()
 				if (solutionNode.parent == None): stopDisplaying = True
 				solutionNode = solutionNode.parent

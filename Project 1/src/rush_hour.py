@@ -4,8 +4,6 @@ from termcolor import colored, cprint
 import colorama
 from string import *
 
-
-
 class RushHourGameNode:
     # Internal variables
     gameBoard = None
@@ -39,6 +37,9 @@ class RushHourGameNode:
         self.kids = []
         self.g = 0
 
+    # Description:
+    # Input:
+    # Output:
     def load_game_configuration(self, fileName):
         with open('../rush_hour_game_configurations/' + fileName + '.txt', 'r') as f:
             for line in f:
@@ -50,6 +51,9 @@ class RushHourGameNode:
                 self.vehicles.append(currentLine)
                 self.numberOfVehicles += 1
 
+    # Description:
+    # Input:
+    # Output:
     def update_game_board(self):
         self.gameBoard = np.zeros(shape = self.gameBoardSize, dtype = object)
         self.gameBoard[:] = 'x'
@@ -60,6 +64,9 @@ class RushHourGameNode:
             elif(orientation == 1):
                 self.gameBoard[yPos:yPos + size, xPos] = str(number)
 
+    # Description:
+    # Input:
+    # Output:
     def display_node(self):
         for row in self.gameBoard:
             for element in row:
@@ -67,12 +74,18 @@ class RushHourGameNode:
             print('')
         print('')
 
+    # Description:
+    # Input:
+    # Output:
     def get_state_identifier(self, vehicles):
         state = ''
         for vehicle in vehicles:
             state = state + str(vehicle[2]) + str(vehicle[3])
         return state
 
+    # Description:
+    # Input:
+    # Output:
     def calc_h(self):
         estimatedMovesToSolution = 0
         objectiveVehicle = self.vehicles[0]
@@ -90,9 +103,15 @@ class RushHourGameNode:
         else:
             self.h = estimatedMovesToSolution
 
+    # Description:
+    # Input:
+    # Output:
     def arc_cost(self, childNode):
         return 1
 
+    # Description:
+    # Input:
+    # Output:
     def is_goal(self):
         objectiveVehicle = self.vehicles[0]
         xPos, yPos, size = objectiveVehicle[2], objectiveVehicle[3], objectiveVehicle[4]
@@ -102,6 +121,9 @@ class RushHourGameNode:
         else:
             return False
 
+    # Description:
+    # Input:
+    # Output:
     def generate_successors(self):
         successors = []
         for vehicle in self.vehicles:
@@ -139,5 +161,3 @@ class RushHourGameNode:
                                                    state = self.get_state_identifier(newVehicleConfig))
                     successors.append(newGameNode)
         return successors
-
-
