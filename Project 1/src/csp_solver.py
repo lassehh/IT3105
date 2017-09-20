@@ -92,4 +92,3 @@ class GAC:
                         self.queue.append(arc)
         validReduction = self.domain_filtering_loop()
         return validReduction
-    
