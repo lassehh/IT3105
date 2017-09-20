@@ -31,7 +31,7 @@ def module_2(argv):
 
     # Refine the nonogram node by running initialization and domain_filtering_loop on the csp
     cspSolver.initialization(problemObject = initialNonogramNode)
-    print('[MAIN]: Loading the config took: ', endTime - startTime, ' seconds.')
+    print('[MAIN]: Loading the config and creating variables, domain and constraints took: ', endTime - startTime, ' seconds.')
 
     # Run the csp-solver on the csp with domain filtering
     startTime = time.clock()
