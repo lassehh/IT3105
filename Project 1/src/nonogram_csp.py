@@ -1,6 +1,7 @@
 from termcolor import colored, cprint
 import copy
 from csp_solver import GAC
+import gc
 
 """
 Class: ConstraintInstance
@@ -123,12 +124,19 @@ class NonogramCspNode:
                 maxSegmentMoves = self.cols - minTotalSegmentLength
                 compositionRestrictionLength = (len(rowSpec) + 1)
 
-                # Initialize storage and initial composition, and find all compositions
+                # Initialize storage and initial composition
                 initialComposition = [0] * compositionRestrictionLength
                 initialComposition[0] = maxSegmentMoves
                 rowCompositions = [initialComposition]
+
+                # Create a set storage to facilitate faster lookup when checking if a composition exists
+                initialCompositionString = ','.join(map(str, initialComposition))
+                rowCompositionsLookupTable = set()
+                rowCompositionsLookupTable.add(initialCompositionString)
+
+                # Find all compositions
                 if(maxSegmentMoves != 0):
-                    self.find_all_weak_compositions(rowCompositions, initialComposition,
+                    self.find_all_weak_compositions(rowCompositions, rowCompositionsLookupTable, initialComposition,
                                                     maxSegmentMoves, compositionRestrictionLength)
 
                 # Translate from compositions to a row variables domain
@@ -146,12 +154,19 @@ class NonogramCspNode:
                 maxSegmentMoves = self.rows - minTotalSegmentLength
                 compositionRestrictionLength = (len(colSpec) + 1)
 
-                # Initialize storage and initial composition, and find all compositions
+                # Initialize storage and initial composition
                 initialComposition = [0] * compositionRestrictionLength
                 initialComposition[0] = maxSegmentMoves
                 colCompositions = [initialComposition]
+
+                # Create a set storage to facilitate faster lookup when checking if a composition exists
+                initialCompositionString = ','.join(map(str, initialComposition))
+                colCompositionsLookupTable = set()
+                colCompositionsLookupTable.add(initialCompositionString)
+
+                # Find all compositions
                 if (maxSegmentMoves != 0):
-                    self.find_all_weak_compositions(colCompositions, initialComposition,
+                    self.find_all_weak_compositions(colCompositions, colCompositionsLookupTable, initialComposition,
                                                     maxSegmentMoves, compositionRestrictionLength)
 
                 # Translate from compositions to a column variables domain
@@ -187,22 +202,21 @@ class NonogramCspNode:
 #             Continuously appends the compositions to the storage.
 # Input: storage compositionsAccumulator, parentNode parentComposition, number n, parts k
 # Output: 0
-    def find_all_weak_compositions(self, compositionsAccumulator, parentComposition, n, k):
+    def find_all_weak_compositions(self, compositionsAccumulator, compositionsLookup, parentComposition, n, k):
         newCompositions = []
         for i in range(1, k):
             tempComposition = list(parentComposition)
-            for j in range(0, k):
-                if (j == 0):
-                    tempComposition[j] -= 1
-                if (j == i):
-                    tempComposition[j] += 1
+            tempComposition[0] -= 1
+            tempComposition[i] += 1
             newCompositions.append(tempComposition)
 
         for composition in newCompositions:
-            if composition not in compositionsAccumulator:
+            compositionString = ','.join(map(str, composition))
+            if compositionString not in compositionsLookup:
                 compositionsAccumulator.append(composition)
+                compositionsLookup.add(compositionString)
                 if(composition[0] != 0):
-                    self.find_all_weak_compositions(compositionsAccumulator, composition, n, k)
+                    self.find_all_weak_compositions(compositionsAccumulator, compositionsLookup, composition, n, k)
 
 # Description: Translates the compositions found in find_all_weak_compositions to domain values.
 # Input: - list of possible compositions, compositions
