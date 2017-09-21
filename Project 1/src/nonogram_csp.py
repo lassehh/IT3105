@@ -1,4 +1,5 @@
 from termcolor import colored, cprint
+from colorama import Fore, Back, Style
 import copy
 from csp_solver import GAC
 
@@ -198,7 +199,10 @@ class NonogramCspNode:
         for row in rows:
             for values in row.domain:
                 for value in values:
-                    cprint(colored((str(value )+ ' '), self.colors[str(value)]), end ='')
+                    if (value == 0):
+                        cprint(colored('  ', self.colors[str(0)], 'on_white'), end ='')
+                    elif(value == 1):
+                        cprint(colored('  ', self.colors[str(1)], 'on_blue'), end='')
                 print('\t', end='')
             print('')
         print('')
