@@ -38,7 +38,7 @@ def tfeval(operators):
     return result
 
 # ***** TENSORBOARD SUPPORT ****
-
+#aa
 # This creates the main data for tensorboard viewing: the graph and variable histories.
 
 def viewprep(session, dir='probeview',flush=120,queue=10):
