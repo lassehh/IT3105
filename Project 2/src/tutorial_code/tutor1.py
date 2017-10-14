@@ -163,8 +163,3 @@ def tfex8(size=5, steps=50, tvect=None,learning_rate = 0.5,showint=10):
 
 
 
-
-
-
-
-
