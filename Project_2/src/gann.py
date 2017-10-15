@@ -11,7 +11,7 @@ class Gann():
     def __init__(self, netDims, cMan, nmbrOfMbs, hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax',
                  lossFunc = 'MSE', learningRate = 0.1, weightRange = (-1,1), caseFrac = 1.0, valFrac = 0.1,
                  testFrac = 0.1, mbs = 10, mapBatchSize = 0, mapLayers = None, mapDendograms = None,
-                 displayWeights = None, displayBiases = None, showInterval = None, validationInterval = None):
+                 showInterval = 100, validationInterval = 100):
 
         # SCENARIO PARAMETERS
         self.networkDims = netDims                              # Sizes of each layer of neurons
@@ -38,6 +38,11 @@ class Gann():
         self.input = None                                       # Pointer to the input of the network, where to feed the network cases/mbs
         self.target = None                                      # Correct classification for each incoming case
         self.output = None                                      # Pointer to the output of the network
+        self.probes = None                                      # Pointer to the probes (bias/weights monitored by tensorboard) which TF keeps track of
+        self.error = None                                       # TF loss function variable created by specifying lossFunc
+        self.predictor = None
+        self.trainer = None
+
 
         # DATA STORAGE
         self.grabvarFigures = []                                # One matplotlib figure for each grabvar
@@ -82,7 +87,10 @@ class Gann():
     # of the weight array.
 
     def configure_learning(self):
-        self.error = tf.reduce_mean(tf.square(self.target - self.output),name='MSE')
+        if self.lossFunc == 'MSE':
+            self.error = tf.reduce_mean(tf.square(self.target - self.output),name='MSE')
+        else:
+            raise AttributeError("Unknown loss function: " + self.lossFunc)
         self.predictor = self.output  # Simple prediction runs will request the value of output neurons
         # Defining the training operator
         optimizer = tf.train.GradientDescentOptimizer(self.learningRate)
@@ -100,7 +108,7 @@ class Gann():
                 inputs = [c[0] for c in minibatch]; targets = [c[1] for c in minibatch]
                 feeder = {self.input: inputs, self.target: targets}
                 _,grabvals,_ = self.run_one_step([self.trainer], gvars, self.probes, session=sess,
-                                                 feed_dict=feeder, step=step, show_interval=self.showInterval)
+                                                 feed_dict=feeder, step=step, showInterval=self.showInterval)
                 error += grabvals[0]
             self.error_history.append((step, error/nmb))
             self.consider_validation_testing(step,sess)
@@ -120,7 +128,7 @@ class Gann():
         if bestk is not None:
             self.test_func = self.gen_match_counter(self.predictor,[TFT.one_hot_to_int(list(v)) for v in targets],k=bestk)
         testres, grabvals, _ = self.run_one_step(self.test_func, self.grabVars, self.probes, session=sess,
-                                                 feed_dict=feeder, show_interval=None)
+                                                 feed_dict=feeder, showInterval=None)
         if bestk is None:
             print('%s Set Error = %f ' % (msg, testres))
         else:
@@ -165,14 +173,14 @@ class Gann():
     # Similar to the "quickrun" functions used earlier.
 
     def run_one_step(self, operators, grabbed_vars=None, probed_vars=None, dir='probeview',
-                  session=None, feed_dict=None, step=1, show_interval=1):
+                     session=None, feed_dict=None, step=1, showInterval=1):
         sess = session if session else TFT.gen_initialized_session(dir=dir)
         if probed_vars is not None:
             results = sess.run([operators, grabbed_vars, probed_vars], feed_dict=feed_dict)
             sess.probe_stream.add_summary(results[2], global_step=step)
         else:
             results = sess.run([operators, grabbed_vars], feed_dict=feed_dict)
-        if show_interval and (step % show_interval == 0):
+        if showInterval and (step % showInterval == 0):
             self.display_grabvars(results[1], grabbed_vars, step=step)
         return results[0], results[1], sess
 
@@ -307,3 +315,19 @@ class Caseman():
     def get_validation_cases(self): return self.validation_cases
     def get_testing_cases(self): return self.testing_cases
 
+
+def autoex(epochs=300,nbits=4,lrate=0.03,showint=100,mbs=None,vfrac=0.1,tfrac=0.1,vint=100,sm=False,bestk=None):
+    size = 2**nbits
+    mbs = mbs if mbs else size
+    case_generator = (lambda : TFT.gen_all_one_hot_cases(2**nbits))
+    cman = Caseman(cfunc=case_generator,vfrac=vfrac,tfrac=tfrac)
+    ann = Gann(netDims=[size,nbits,size],cMan=cman,learningRate=lrate,showInterval=showint,mbs=mbs,
+               validationInterval=vint,outputActivationFunc='softmax', nmbrOfMbs=1)
+    ann.gen_probe(0,'wgt',('hist','avg'))  # Plot a histogram and avg of the incoming weights to module 0.
+    ann.gen_probe(1,'out',('avg','max'))  # Plot average and max value of module 1's output vector
+    #ann.add_grabvar(0,'wgt') # Add a grabvar (to be displayed in its own matplotlib window).
+    ann.run(epochs,bestk=bestk)
+    ann.runmore(epochs*2,bestk=bestk)
+    return ann
+
+autoex()
