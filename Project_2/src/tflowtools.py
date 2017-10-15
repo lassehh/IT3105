@@ -50,7 +50,8 @@ def viewprep(session, dir='probeview',flush=120,queue=10):
 # Then open a Chrome browser and go to site:  localhost:6006
 
 def fireup_tensorboard(logdir):
-    os.system('tensorboard --logdir='+logdir)
+    pass
+    #os.system('tensorboard --logdir='+logdir)
 
 def clear_tensorflow_log(logdir):
     os.system('rm ' + logdir +'/events.out.*')
