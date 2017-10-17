@@ -89,13 +89,13 @@ class Gann():
     # gen_match_counter error function. Otherwise, when
     # bestk=None, the standard MSE error function is used for testing.
 
-    def do_testing(self,sess,cases,msg='Testing',bestk=None):
+    def do_testing(self,sess,cases,msg='Testing',bestk=1):
         inputs = [c[0] for c in cases]; targets = [c[1] for c in cases]
         feeder = {self.input: inputs, self.target: targets}
-        self.test_func = self.error
+        test_func = self.error
         if bestk is not None:
-            self.test_func = self.gen_match_counter(self.predictor,[TFT.one_hot_to_int(list(v)) for v in targets],k=bestk)
-        testres, grabvals, _ = self.run_one_step(self.test_func, self.grabvars, self.probes, session=sess,
+            test_func = self.gen_match_counter(self.predictor,[TFT.one_hot_to_int(list(v)) for v in targets],k=bestk)
+        testres, grabvals, _ = self.run_one_step(test_func, self.grabvars, self.probes, session=sess,
                                            feed_dict=feeder,  show_interval=None)
         if bestk is None:
             print('%s Set Error = %f ' % (msg, testres))
@@ -149,7 +149,8 @@ class Gann():
         else:
             results = sess.run([operators, grabbed_vars], feed_dict=feed_dict)
         if show_interval and (step % show_interval == 0):
-            self.display_grabvars(results[1], grabbed_vars, step=step)
+            pass
+            #self.display_grabvars(results[1], grabbed_vars, step=step)
         return results[0], results[1], sess
 
     def display_grabvars(self, grabbed_vals, grabbed_vars,step=1):
@@ -309,4 +310,4 @@ def countex(epochs=5000,nbits=10,ncases=500,lrate=0.5,showint=500,mbs=20,vfrac=0
     return ann
 
 
-autoex()
+countex()
