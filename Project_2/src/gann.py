@@ -10,7 +10,7 @@ import tflowtools as TFT
 class Gann():
 
     def __init__(self, netDims, cMan, nmbrOfMbs, hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax',
-                 lossFunc = 'MSE', learningRate = 0.1, weightRange = (-1,1), caseFrac = 1.0, valFrac = 0.1,
+                 lossFunc = 'MSE', optimizer = 'gradient_descent', learningRate = 0.1, momentum = 0.1, weightRange = (-1,1), caseFrac = 1.0, valFrac = 0.1,
                  testFrac = 0.1, mbs = 10, mapBatchSize = 0, mapLayers = None, mapDendograms = None,
                  showInterval = 100, validationInterval = 100):
 
@@ -19,7 +19,9 @@ class Gann():
         self.hiddenActivationFunc = hiddenActivationFunc        # Activation function to use for each hidden layer
         self.outputActivationFunc = outputActivationFunc        # Activation function for the output of the network
         self.lossFunc = lossFunc                                # Quantity to minimize during training
-        self.learningRate = learningRate                        # How big steps to take in the direction of the gradient
+        self.optimizer = optimizer                              # Optimizer used in learning to minimize the loss. 'gradient_descent' or 'momentum'
+        self.learningRate = learningRate                        # How large steps to take in the direction of the gradient
+        self.momentum = momentum                                # The momentum, only relevant when self.optimizer = 'momentum'
         self.weightInit = weightRange                           # Upper and lower band for random initialization of weights
         self.caseMan = cMan                                     # Case manager object with a data source
         self.caseFrac = caseFrac                                # What fraction of the total data cases to use
@@ -102,7 +104,12 @@ class Gann():
             raise AssertionError("Unknown loss function: " + self.lossFunc)
         #self.output = self.output  # Simple prediction runs will request the value of output neurons
         # Defining the training operator
-        optimizer = tf.train.GradientDescentOptimizer(self.learningRate)
+        if self.optimizer == 'gradient_descent':
+            optimizer = tf.train.GradientDescentOptimizer(self.learningRate)
+        elif self.optimizer == 'momentum':
+            optimizer = tf.train.MomentumOptimizer(self.learningRate, momentum = self.momentum, use_nesterov = True)
+        else:
+            raise AssertionError("Unknown optimizer: " + self.optimizer)
         self.trainer = optimizer.minimize(self.error, name='Backprop')
 
     def do_training(self, sess, cases, epochs=100, continued=False):
@@ -361,13 +368,17 @@ def autoex(epochs=300, nbits=4, lrate=0.03, showint=100, mbs=None, vfrac=0.1, tf
     return ann
 
 
-def countex(epochs=5000,nbits=10,ncases=500,lrate=0.05,showint=500,mbs=30,vfrac=0.1,tfrac=0.1,vint=100, bestk=1):
+def countex(epochs=4000, nbits=10, ncases=500, lrate=0.05, showint=500, mbs=30, vfrac=0.1, tfrac=0.1, vint=200, bestk=1):
     case_generator = (lambda: TFT.gen_vector_count_cases(ncases,nbits))
     cman = Caseman(cfunc=case_generator, vfrac=vfrac, tfrac=tfrac)
-    ann = Gann(netDims=[nbits, nbits*3, nbits*3,nbits*3,nbits*3, nbits+1], cMan=cman, learningRate=lrate, showInterval=showint,
+    ann = Gann(netDims=[nbits, nbits*3, nbits*3, nbits*3, nbits+1], cMan=cman, learningRate=lrate, showInterval=showint,
                mbs=mbs, validationInterval=vint,
-                hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax',lossFunc = 'softmax_cross_entropy', nmbrOfMbs = 1)
-    ann.run(epochs,bestk=bestk)
+               hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax', lossFunc = 'softmax_cross_entropy',
+               optimizer = 'momentum', momentum = 0.1, nmbrOfMbs = 1)
+    ann.run(epochs, bestk = bestk)
+    #TFT.plot_training_history(ann.error_history, ann.validationHistory, xtitle="Epoch", ytitle="Error",
+                           #   title="training history", fig=True)
+    PLT.pause(10)
     return ann
 
 countex()
