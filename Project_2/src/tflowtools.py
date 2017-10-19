@@ -54,7 +54,7 @@ def fireup_tensorboard(logdir):
     #os.system('tensorboard --logdir='+logdir)
 
 def clear_tensorflow_log(logdir):
-    os.system('rm ' + logdir +'/events.out.*')
+    os.system('rd /s /q ' + logdir)
 
 # ***** GENERATING Simple DATA SETS for MACHINE LEARNING *****
 
@@ -306,14 +306,14 @@ def simple_plot(yvals,xvals=None,xtitle='X',ytitle='Y',title='Y = F(X)'):
     PLT.draw()
 
 # Each history is a list of pairs (timestamp, value).
-def plot_training_history(error_hist,validation_hist=[],xtitle="Epoch",ytitle="Error",title="History",fig=True):
+def plot_training_history(error_hist,validation_hist=[],xtitle='Epoch',ytitle='Error',title='History',fig=True):
     PLT.ion()
     if fig: PLT.figure()
     if len(error_hist) > 0:
         simple_plot([p[1] for p in error_hist], [p[0] for p in error_hist],xtitle=xtitle,ytitle=ytitle,title=title)
         #PLT.hold(True)
     if len(validation_hist) > 0:
-        simple_plot([p[1] for p in validation_hist], [p[0] for p in validation_hist])
+        simple_plot([p[1] for p in validation_hist], [p[0] for p in validation_hist],xtitle=xtitle,ytitle=ytitle,title=title)
     PLT.ioff()
 
 # alpha = transparency
