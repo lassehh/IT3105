@@ -9,10 +9,10 @@ import tflowtools as TFT
 
 class Gann():
 
-    def __init__(self, netDims, cMan, nmbrOfMbs, hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax',
-                 lossFunc = 'MSE', optimizer = 'gradient_descent', learningRate = 0.1, momentum = 0.1, weightRange = (-1,1), caseFrac = 1.0, valFrac = 0.1,
-                 testFrac = 0.1, mbs = 10, mapBatchSize = 0, mapLayers = None, mapDendograms = None,
-                 showInterval = 100, validationInterval = 100):
+    def __init__(self, netDims, cMan, hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax',
+                 lossFunc = 'MSE', optimizer = 'gradient_descent', learningRate = 0.1, momentum = 0.1, weightRange = (-1,1),
+                 mbs = 10, mapBatchSize = 0, mapLayers = None, mapDendograms = None,
+                 showInterval = 100, validationInterval = 100, displayWeights =[], displayBiases = []):
 
         # SCENARIO PARAMETERS
         self.networkDims = netDims                              # Sizes of each layer of neurons
@@ -24,15 +24,13 @@ class Gann():
         self.momentum = momentum                                # The momentum, only relevant when self.optimizer = 'momentum'
         self.weightInit = weightRange                           # Upper and lower band for random initialization of weights
         self.caseMan = cMan                                     # Case manager object with a data source
-        self.caseFrac = caseFrac                                # What fraction of the total data cases to use
-        self.valFrac = valFrac                                  # What fraction of the data to use for validation
-        self.testFrac = testFrac                                # What fraction of the data to use for final testing
         self.miniBatchSize = mbs                                # Amount of cases in each batch which are used for each run
         self.mapBatchSize = mapBatchSize                        # Size of batch of cases used for a map test
-        self.nmbrOfMbs = nmbrOfMbs                              # Total number of mbs to be run through each run in training
         self.mapLayers = mapLayers                              # List of layers(their indices) to be visualized during a map test
         self.mapDendograms = mapDendograms                      # List of layers(their indices) whose activation patterns will be used to make dendograms
         self.grabVars = []                                      # Variables (weights and/or biases) to be monitored (by gann code) during a run.
+        self.displayWeights = displayWeights                    # List of the weight arrays(their layer indices) to be visualized at the end of the run
+        self.displayBiases = displayBiases                      # List of the bias vectors(their layer indices) to be visualized at the end of the run
 
         # CONVENIENCE PARAMETERS
         self.showInterval = showInterval                        # Frequency of showing grabbed variables
@@ -76,7 +74,7 @@ class Gann():
         invar = self.input; insize = num_inputs
         # Build all modules and connect them
         for i,outsize in enumerate(self.networkDims[1:]):
-            gmod = Gannmodule(self, i, invar, insize, outsize, self.hiddenActivationFunc)
+            gmod = Gannmodule(self, i, invar, insize, outsize, self.hiddenActivationFunc, initWeightRange = self.weightInit)
             invar = gmod.output; insize = gmod.outsize
         self.rawOutput = gmod.output # Output of last module is output of whole network
         if self.outputActivationFunc == 'softmax':
@@ -87,6 +85,12 @@ class Gann():
             raise AssertionError(self.outputActivationFunc + " is not a valid network output activation function.")
         self.target = tf.placeholder(tf.float64, shape=(None,gmod.outsize), name='Target')
         self.configure_learning()
+
+        # Add all grabbed variables
+        for weight in self.displayWeights:
+            self.add_grabvar(weight, 'wgt')
+        for bias in self.displayBiases:
+            self.add_grabvar(bias, 'bias')
 
     # The optimizer knows to gather up all "trainable" variables in the function graph and compute
     # derivatives of the error function with respect to each component of each variable, i.e. each weight
@@ -115,22 +119,30 @@ class Gann():
     def do_training(self, sess, cases, epochs=100, continued=False):
         if not(continued): self.error_history = []
         for i in range(epochs):
-            error = 0; step = self.globalTrainingStep + i
+            error = 0
+            step = self.globalTrainingStep + i
             gvars = [self.error] + self.grabVars
-            mbs = self.miniBatchSize; ncases = len(cases); nmb = math.ceil(ncases / mbs)
+            mbs = self.miniBatchSize
+            ncases = len(cases)
+            nmb = math.ceil(ncases / mbs)
             for cstart in range(0, ncases, mbs):  # Loop through cases, one minibatch at a time.
                 cend = min(ncases, cstart + mbs)
                 minibatch = cases[cstart:cend]
-                inputs = [c[0] for c in minibatch]; targets = [c[1] for c in minibatch]
+                inputs = [c[0] for c in minibatch]
+                targets = [c[1] for c in minibatch]
                 feeder = {self.input: inputs, self.target: targets}
                 _,grabvals,_ = self.run_one_step([self.trainer], gvars, self.probes, session=sess,
                                                  feed_dict=feeder, step=step, showInterval=self.showInterval)
+                if self.showInterval and (step % self.showInterval == 0):
+                    step = self.globalTrainingStep + i + 1
+
                 error += grabvals[0]
+            step = self.globalTrainingStep + i
             self.error_history.append((step, error/nmb))
             self.consider_validation_testing(step, sess)
         self.globalTrainingStep += epochs
         TFT.plot_training_history(self.error_history, self.validationHistory, xtitle="Epoch", ytitle="Error",
-                                  title="", fig=not(continued))
+                                  title="History", fig=not(continued))
 
 
     # bestk = 1 when you're doing a classification task and the targets are one-hot vectors.  This will invoke the
@@ -202,26 +214,27 @@ class Gann():
         else:
             results = sess.run([operators, grabbed_vars], feed_dict = feed_dict)
         if showInterval and (step % showInterval == 0):
-            pass
-            #self.display_grabvars(results[1], grabbed_vars, step=step)
+            self.display_grabvars(results[1], grabbed_vars, step=step)
             #self.display_loss_and_error()
         return results[0], results[1], sess
 
     def display_loss_and_error(self):
         pass
 
+    #Currently only plots when the grabbed variable is a matrix. Don'tknow what to do with biases
     def display_grabvars(self, grabbed_vals, grabbed_vars, step=1):
         names = [x.name for x in grabbed_vars]
         msg = "Grabbed Variables at Step " + str(step)
-        print("\n" + msg, end="\n")
+        #print("\n" + msg, end="\n")
         fig_index = 0
         for i, v in enumerate(grabbed_vals):
-            if names: print("   " + names[i] + " = ", end="\n")
+            #if names: print("   " + names[i] + " = ", end="\n")
             if type(v) == np.ndarray and len(v.shape) > 1: # If v is a matrix, use hinton plotting
                 TFT.hinton_plot(v, fig=self.grabvarFigures[fig_index], title=names[i] + ' at step ' + str(step))
                 fig_index += 1
             else:
-                print(v, end="\n\n")
+                pass
+                #print(v, end="\n\n")
 
     def run(self, epochs=100, sess=None, continued=False, bestk=None):
         PLT.ion()
@@ -274,21 +287,23 @@ class Gann():
 # A general ann module = a layer of neurons (the output) plus its incoming weights and biases.
 class Gannmodule():
 
-    def __init__(self, ann, index, invariable, insize, outsize, activationFunc = 'relu'):
+    def __init__(self, ann, index, invariable, insize, outsize, activationFunc = 'relu', initWeightRange= (-1,1)):
         self.ann = ann
         self.insize = insize        # Number of neurons feeding into this module
         self.outsize = outsize      # Number of neurons in this module
         self.input = invariable     # Either the gann's input variable or the upstream module's output
         self.index = index
         self.activationFunc = activationFunc
+        self.initialWeightRange = initWeightRange
         self.name = "Module-" + str(self.index)
         self.build()
 
     def build(self):
         moduleName = self.name; n = self.outsize
-        self.weights = tf.Variable(np.random.uniform(-.1, .1, size=(self.insize,n)),
+        (lower_w, upper_w) = self.initialWeightRange
+        self.weights = tf.Variable(np.random.uniform(lower_w, upper_w, size=(self.insize,n)),
                                    name=moduleName+'-wgt', trainable=True) # True = default for trainable anyway
-        self.biases = tf.Variable(np.random.uniform(-.1, .1, size=n),
+        self.biases = tf.Variable(np.random.uniform(lower_w, upper_w, size=n),
                                   name=moduleName+'-bias', trainable=True)  # First bias vector
 
         # Set activation function for the neurons in the module
@@ -328,25 +343,31 @@ class Gannmodule():
 
 class Caseman():
 
-    def __init__(self, cfunc, vfrac=0.0, tfrac=0.0):
-        self.casefunc = cfunc
-        self.validation_fraction = vfrac
-        self.test_fraction = tfrac
+    def __init__(self, cfunc, cfrac = 1.0, vfrac = 0.0, tfrac = 0.0):
+        self.casefunc = cfunc                                   # Function used to generate all data cases from a dataset
+        self.case_fraction = cfrac                              # What fraction of the total data cases to use
+        self.validation_fraction = vfrac                        # What fraction of the data to use for validation
+        self.test_fraction = tfrac                              # What fraction of the data to use for final testing
         self.training_fraction = 1 - (vfrac + tfrac)
         self.generate_cases()
         self.organize_cases()
+
 
     def generate_cases(self):
         self.cases = self.casefunc()  # Run the case generator.  Case = [input-vector, target-vector]
 
     def organize_cases(self):
-        ca = np.array(self.cases)
-        np.random.shuffle(ca) # Randomly shuffle all cases
-        separator1 = round(len(self.cases) * self.training_fraction)
-        separator2 = separator1 + round(len(self.cases)*self.validation_fraction)
-        self.training_cases = ca[0:separator1]
-        self.validation_cases = ca[separator1:separator2]
-        self.testing_cases = ca[separator2:]
+        ca = np.array(self.cases)       # create numpy array of the cases
+        np.random.shuffle(ca)           # Randomly shuffle all cases
+        if self.case_fraction < 1:
+            case_separator = round(len(self.cases) * self.case_fraction)
+            ca = ca[0:case_separator]   # only use a fraction of the cases
+
+        training_separator = round(len(ca) * self.training_fraction)
+        validation_separator = training_separator + round(len(ca) * self.validation_fraction)
+        self.training_cases = ca[0:training_separator]
+        self.validation_cases = ca[training_separator:validation_separator]
+        self.testing_cases = ca[validation_separator:]
 
     def get_training_cases(self): return self.training_cases
     def get_validation_cases(self): return self.validation_cases
@@ -359,7 +380,7 @@ def autoex(epochs=300, nbits=4, lrate=0.03, showint=100, mbs=None, vfrac=0.1, tf
     case_generator = (lambda : TFT.gen_all_one_hot_cases(2**nbits))
     cman = Caseman(cfunc = case_generator, vfrac = vfrac, tfrac = tfrac)
     ann = Gann(netDims = [size, nbits, size], cMan = cman, learningRate = lrate, showInterval = showint, mbs = mbs,
-               validationInterval = vint, hiddenActivationFunc = 'relu', outputActivationFunc = 'none', nmbrOfMbs = 1)
+               validationInterval = vint, hiddenActivationFunc = 'relu', outputActivationFunc = 'none')
     #ann.gen_probe(0, 'wgt', ('hist','avg'))  # Plot a histogram and avg of the incoming weights to module 0.
     #ann.gen_probe(1, 'out', ('avg','max'))  # Plot average and max value of module 1's output vector
     #ann.add_grabvar(0, 'wgt') # Add a grabvar (to be displayed in its own matplotlib window).
@@ -368,13 +389,15 @@ def autoex(epochs=300, nbits=4, lrate=0.03, showint=100, mbs=None, vfrac=0.1, tf
     return ann
 
 
-def countex(epochs=4000, nbits=10, ncases=500, lrate=0.05, showint=500, mbs=30, vfrac=0.1, tfrac=0.1, vint=200, bestk=1):
+
+
+def countex(epochs=4000, nbits=10, ncases=500, lrate=0.05, showint=500, mbs=30, cfrac = 1.0, vfrac=0.1, tfrac=0.1, vint=200, bestk=1):
     case_generator = (lambda: TFT.gen_vector_count_cases(ncases,nbits))
-    cman = Caseman(cfunc=case_generator, vfrac=vfrac, tfrac=tfrac)
+    cman = Caseman(cfunc=case_generator, cfrac=cfrac, vfrac=vfrac, tfrac=tfrac)
     ann = Gann(netDims=[nbits, nbits*3, nbits*3, nbits*3, nbits+1], cMan=cman, learningRate=lrate, showInterval=showint,
                mbs=mbs, validationInterval=vint,
                hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax', lossFunc = 'softmax_cross_entropy',
-               optimizer = 'momentum', momentum = 0.1, nmbrOfMbs = 1)
+               optimizer = 'momentum', momentum = 0.1, weightRange=(-.1,.1), displayBiases=[], displayWeights=[0])
     ann.run(epochs, bestk = bestk)
     #TFT.plot_training_history(ann.error_history, ann.validationHistory, xtitle="Epoch", ytitle="Error",
                            #   title="training history", fig=True)
