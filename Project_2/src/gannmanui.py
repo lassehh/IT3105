@@ -5,7 +5,6 @@ from msvcrt import getwch
 
 class GannManUi:
     state = None
-    getch = None
     gannMan = None
     pointer = '>>'
     menuIndexPointer = 0

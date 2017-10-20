@@ -2,13 +2,10 @@
 import tflowtools as TFT
 
 class GannMan:
-    dataSource = None
-    caseMan = None
-    ann = None
     ganns = None
 
     def __init__(self):
-        ganns = []
+        self.ganns = []
 
     def create_gann(self, name, networkDims, hiddenActivationFunc, outputActivationFunc,
                     lossFunc, learningRate, weightInit, dataSource, dataSourceParas, caseFrac, valFrac,
@@ -23,4 +20,7 @@ class GannMan:
 
     def run_network_more(self, epochs, name):
         #TODO: do gann.runmore()
+        pass
+
+    def run_best_param_case(self):
         pass
