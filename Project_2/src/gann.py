@@ -27,11 +27,12 @@ class Gann():
         self.miniBatchSize = mbs                                # Amount of cases in each batch which are used for each run
         self.mapBatchSize = mapBatchSize                        # Size of batch of cases used for a map test. 0 indicates no map test
         self.mapLayers = mapLayers                              # List of layers(their indices) to be visualized during a map test
-        self.mapDendograms = mapDendograms                      # List of layers(their indices) whose activation patterns will be used to make dendograms
+        self.mapDendrograms = mapDendrograms                    # List of layers(their indices) whose activation patterns will be used to make dendograms
         self.grabVars = []                                      # Variables (weights and/or biases) to be monitored (by gann code) during a run.
-        self.displayWeights = displayWeights                    # List of the weight arrays(their layer indices) to be visualized at the end of the run
-        self.displayBiases = displayBiases                      # List of the bias vectors(their layer indices) to be visualized at the end of the run
+        self.displayWeights = displayWeights                    # List of the weight arrays(their hidden layer indices) to be visualized at the end of the run
+        self.displayBiases = displayBiases                      # List of the bias vectors(their hidden layer indices) to be visualized at the end of the run
         self.mapVars = []
+        self.dendrogramVars = []
 
         # CONVENIENCE PARAMETERS
         self.name = name                                        # Frequency of running validation runs
@@ -74,6 +75,10 @@ class Gann():
                     self.mapVars.append(self.modules[layer_index - 1].getvar('out'))
             else:
                 self.mapVars.append(self.modules[layer_index].getvar('in'))
+
+    def add_dendrogramvars(self):
+        for layer_index in self.mapDendrograms:
+            self.dendrogramVars.append(self.modules[layer_index].getvar('out'))
 
     def roundup_probes(self):
         self.probes = tf.summary.merge_all()
@@ -187,16 +192,18 @@ class Gann():
 
     # Mapping: post-training activity that is designed to clarify the link between input patterns and hidden and/or output patterns.
     # USe the grabbed variables
-    def do_mapping(self, session, cases, epoch = 'map', msg = 'Testing'):
+    def do_mapping(self, session, cases):
         inputs = [c[0] for c in cases]
         targets = [c[1] for c in cases]
         feeder = {self.input: inputs, self.target: targets}
         testFunc = self.gen_match_counter(self.output, [TFT.one_hot_to_int(list(v)) for v in targets], k=1)
 
-        _, mapped_vals, _ = self.run_one_step(grabbed_vars = self.mapVars, probed_vars = self.probes,
+        _, vals, _ = self.run_one_step(grabbed_vars = [self.mapVars]+ [self.dendrogramVars], probed_vars = self.probes,
                                            operators = testFunc, session = session,
                                            feed_dict = feeder, showInterval = 0)
-        return mapped_vals
+        mapped_vals = vals[0]
+        dendrogram_vals = vals[1]
+        return mapped_vals, dendrogram_vals
 
 
 
@@ -286,19 +293,24 @@ class Gann():
         self.close_current_session(view = False)
         PLT.ioff()
 
-    def run_mapping_routine(self):
+    def run_mapping_routine(self, case_generator = None, dendrogram = False, hinton = True):
         self.reopen_current_session()
         if self.mapBatchSize:
-            cases = self.caseMan.get_mapping_cases(self.mapBatchSize)
+            cases = case_generator() if case_generator else self.caseMan.get_mapping_cases(self.mapBatchSize)
             self.add_mapvars()
+            self.add_dendrogramvars()
             mapvals = self.do_mapping(session = self.current_session, cases = cases)
 
+            #labels = [TFT.bits_to_str(s[1]) for s in cases]
+            labels = [str(np.argmax(c[1])) for c in cases]
             names = [x.name for x in self.mapVars]
             for i, v in enumerate(mapvals):
                 # if names: print("   " + names[i] + " = ", end="\n")
                 if type(v) == np.ndarray and len(v.shape) > 1:  # If v is a matrix, use hinton plotting
                     TFT.hinton_plot(v, fig=None, title='Activation pattern of layer ' + names[i])
-            noob=0
+            if len(self.mapDendrograms) > 0:
+                # labels = [TFT.bits_to_str(s[1]) for s in cases]
+                labels = [str(np.argmax(c[1])) for c in cases]
 
 
     # After a run is complete, runmore allows us to do additional training on the network, picking up where we
@@ -436,6 +448,7 @@ class Caseman():
         return mapping_cases
 
 
+
 def autoex(epochs=300, nbits=4, lrate=0.03, showint=100, mbs=None, vfrac=0.1, tfrac=0.1, vint=100,  bestk=1):
     size = 2**nbits
     mbs = mbs if mbs else size
@@ -451,15 +464,18 @@ def autoex(epochs=300, nbits=4, lrate=0.03, showint=100, mbs=None, vfrac=0.1, tf
     return ann
 
 
-
-
 def countex(epochs=200, nbits=10, ncases=500, lrate=0.1, showint=500, mbs=10, cfrac = 1.0, vfrac=0.1, tfrac=0.1, vint=20, bestk=1):
     case_generator = (lambda: TFT.gen_vector_count_cases(ncases,nbits))
     cman = Caseman(cfunc=case_generator, cfrac=cfrac, vfrac=vfrac, tfrac=tfrac)
     ann = Gann(name = 'countex', netDims=[nbits, nbits*3, nbits*3, nbits*3, nbits+1], cMan=cman, learningRate=lrate,
                mbs=mbs,
                hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax', lossFunc = 'softmax_cross_entropy',
-               optimizer = 'momentum', momentum = 0.1, weightRange=(-.1,.1), displayBiases=[0, 3], displayWeights=[])
+               optimizer = 'gradient_descent', momentum = 0.1, weightRange=(-.5,.5), displayBiases=[], displayWeights=[], mapBatchSize = mapBatchSize, mapLayers = [0,1,2])
+
+    # generate all possible input cases
+    case_generator = (lambda: TFT.gen_vector_count_cases(mapBatchSize, nbits, random = False))
+    ann.run_mapping_routine(case_generator)
+
     ann.run(epochs = epochs, showInterval = showint, validationInterval = vint, bestk = bestk)
     #TFT.plot_training_history(ann.error_history, ann.validationHistory, xtitle="Epoch", ytitle="Error",
                            #   title="training history", fig=True)
