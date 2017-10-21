@@ -25,12 +25,13 @@ class Gann():
         self.weightInit = weightRange                           # Upper and lower band for random initialization of weights
         self.caseMan = cMan                                     # Case manager object with a data source
         self.miniBatchSize = mbs                                # Amount of cases in each batch which are used for each run
-        self.mapBatchSize = mapBatchSize                        # Size of batch of cases used for a map test
+        self.mapBatchSize = mapBatchSize                        # Size of batch of cases used for a map test. 0 indicates no map test
         self.mapLayers = mapLayers                              # List of layers(their indices) to be visualized during a map test
         self.mapDendograms = mapDendograms                      # List of layers(their indices) whose activation patterns will be used to make dendograms
         self.grabVars = []                                      # Variables (weights and/or biases) to be monitored (by gann code) during a run.
         self.displayWeights = displayWeights                    # List of the weight arrays(their layer indices) to be visualized at the end of the run
         self.displayBiases = displayBiases                      # List of the bias vectors(their layer indices) to be visualized at the end of the run
+        self.mapVars = []
 
         # CONVENIENCE PARAMETERS
         self.name = name                                        # Frequency of running validation runs
@@ -61,6 +62,19 @@ class Gann():
         self.grabVars.append(self.modules[module_index].getvar(type))
         self.grabvarFigures.append(PLT.figure())
 
+
+    # Assumed that layer_index = 0 means that we want to monitor the input to the first hidden layer.
+    # layer index = 1 means that we want to monitor the output of the first hidden layer, i-e the input of the second hidden layer
+    def add_mapvars(self):
+        for layer_index in self.mapLayers:
+            if layer_index == (len(self.modules)): # the last output
+                if self.outputActivationFunc == 'softmax':
+                    self.mapVars.append(tf.nn.softmax(self.modules[layer_index - 1].getvar('out')))
+                else:
+                    self.mapVars.append(self.modules[layer_index - 1].getvar('out'))
+            else:
+                self.mapVars.append(self.modules[layer_index].getvar('in'))
+
     def roundup_probes(self):
         self.probes = tf.summary.merge_all()
 
@@ -74,7 +88,8 @@ class Gann():
         # Build all modules and connect them
         for i,outsize in enumerate(self.networkDims[1:]):
             gmod = Gannmodule(self, i, invar, insize, outsize, self.hiddenActivationFunc, initWeightRange = self.weightInit)
-            invar = gmod.output; insize = gmod.outsize
+            invar = gmod.output
+            insize = gmod.outsize
         self.rawOutput = gmod.output # Output of last module is output of whole network
         if self.outputActivationFunc == 'softmax':
             self.output = tf.nn.softmax(self.rawOutput)
@@ -169,6 +184,22 @@ class Gann():
             print('Epoch: %s\t\t %s loss: %5.4f\t\t %s accuracy: %d %%' % (epoch, msg, loss, msg, accuracy))
         return loss, grabvals  # self.error uses MSE, so this is a per-case value when bestk=None
 
+
+    # Mapping: post-training activity that is designed to clarify the link between input patterns and hidden and/or output patterns.
+    # USe the grabbed variables
+    def do_mapping(self, session, cases, epoch = 'map', msg = 'Testing'):
+        inputs = [c[0] for c in cases]
+        targets = [c[1] for c in cases]
+        feeder = {self.input: inputs, self.target: targets}
+        testFunc = self.gen_match_counter(self.output, [TFT.one_hot_to_int(list(v)) for v in targets], k=1)
+
+        _, mapped_vals, _ = self.run_one_step(grabbed_vars = self.mapVars, probed_vars = self.probes,
+                                           operators = testFunc, session = session,
+                                           feed_dict = feeder, showInterval = 0)
+        return mapped_vals
+
+
+
     # Logits = tensor, float - [batch_size, NUM_CLASSES].
     # labels: Labels tensor, int32 - [batch_size], with values in range [0, NUM_CLASSES).
     # in_top_k checks whether correct val is in the top k logit outputs.  It returns a vector of shape [batch_size]
@@ -252,9 +283,23 @@ class Gann():
         self.training_session(epochs, sess = sess, continued = continued)
         self.test_on_trains(sess = self.current_session, bestk = bestk)
         self.testing_session(sess = self.current_session, bestk = bestk)
-
         self.close_current_session(view = False)
         PLT.ioff()
+
+    def run_mapping_routine(self):
+        self.reopen_current_session()
+        if self.mapBatchSize:
+            cases = self.caseMan.get_mapping_cases(self.mapBatchSize)
+            self.add_mapvars()
+            mapvals = self.do_mapping(session = self.current_session, cases = cases)
+
+            names = [x.name for x in self.mapVars]
+            for i, v in enumerate(mapvals):
+                # if names: print("   " + names[i] + " = ", end="\n")
+                if type(v) == np.ndarray and len(v.shape) > 1:  # If v is a matrix, use hinton plotting
+                    TFT.hinton_plot(v, fig=None, title='Activation pattern of layer ' + names[i])
+            noob=0
+
 
     # After a run is complete, runmore allows us to do additional training on the network, picking up where we
     # left off after the last call to run (or runmore).  Use of the "continued" parameter (along with
@@ -384,6 +429,11 @@ class Caseman():
     def get_training_cases(self): return self.training_cases
     def get_validation_cases(self): return self.validation_cases
     def get_testing_cases(self): return self.testing_cases
+    def get_mapping_cases(self, mapBatchSize):
+        training_cases = np.array(self.training_cases)
+        np.random.shuffle(training_cases)
+        mapping_cases = training_cases[:mapBatchSize]
+        return mapping_cases
 
 
 def autoex(epochs=300, nbits=4, lrate=0.03, showint=100, mbs=None, vfrac=0.1, tfrac=0.1, vint=100,  bestk=1):
@@ -415,5 +465,4 @@ def countex(epochs=200, nbits=10, ncases=500, lrate=0.1, showint=500, mbs=10, cf
                            #   title="training history", fig=True)
     PLT.pause(10)
     return ann
-
 #countex()
