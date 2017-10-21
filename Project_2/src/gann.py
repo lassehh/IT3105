@@ -118,6 +118,7 @@ class Gann():
 
     def do_training(self, sess, cases, epochs=100, continued=False):
         if not(continued): self.error_history = []
+        last_grabvals = []
         for i in range(epochs):
             error = 0
             step = self.globalTrainingStep + i
@@ -137,6 +138,7 @@ class Gann():
                     step = self.globalTrainingStep + i + 1
 
                 error += grabvals[0]
+                #last_grabvals = grabvals
             step = self.globalTrainingStep + i
             self.error_history.append((step, error/nmb))
             self.consider_validation_testing(step, sess)
@@ -147,7 +149,7 @@ class Gann():
 
     # bestk = 1 when you're doing a classification task and the targets are one-hot vectors.  This will invoke the
     # gen_match_counter error function. Otherwise, when
-    # bestk=None, the standard MSE error function is used for testing.
+    # bestk=None, the standard loss function is used for testing.
 
     def do_testing(self, sess, cases, epoch = 'test', msg='Testing', bestk=1):
         inputs = [c[0] for c in cases]; targets = [c[1] for c in cases]
@@ -166,7 +168,7 @@ class Gann():
             print('Epoch: %s\t\t %s loss: N/A\t\t %s : %s %%' % (epoch, msg, msg, accuracy))
         else:
             print('Epoch: %s\t\t %s loss: %5.4f\t\t %s accuracy: %d %%' % (epoch, msg, loss, msg, accuracy))
-        return loss  # self.error uses MSE, so this is a per-case value when bestk=None
+        return loss, grabvals  # self.error uses MSE, so this is a per-case value when bestk=None
 
     # Logits = tensor, float - [batch_size, NUM_CLASSES].
     # labels: Labels tensor, int32 - [batch_size], with values in range [0, NUM_CLASSES).
@@ -190,13 +192,15 @@ class Gann():
     def testing_session(self, sess, bestk=None):
         cases = self.caseMan.get_testing_cases()
         if len(cases) > 0:
-            self.do_testing(sess, cases, msg='Final testing', bestk=bestk)
+            _, grabvals = self.do_testing(sess, cases, msg='Final testing', bestk=bestk)
+            if len(grabvals) > 0:
+                self.display_grabvars(grabvals, self.grabVars)
 
     def consider_validation_testing(self, epoch, sess):
         if self.validationInterval and (epoch % self.validationInterval == 0):
             cases = self.caseMan.get_validation_cases()
             if len(cases) > 0:
-                error = self.do_testing(sess, cases = cases, epoch = epoch, msg='Validation')
+                error, _ = self.do_testing(sess, cases = cases, epoch = epoch, msg='Validation')
                 self.validationHistory.append((epoch, error))
 
     # Do testing (i.e. calc error without learning) on the training set.
@@ -214,7 +218,8 @@ class Gann():
         else:
             results = sess.run([operators, grabbed_vars], feed_dict = feed_dict)
         if showInterval and (step % showInterval == 0):
-            self.display_grabvars(results[1], grabbed_vars, step=step)
+            pass
+            #self.display_grabvars(results[1], grabbed_vars, step=step)
             #self.display_loss_and_error()
         return results[0], results[1], sess
 
@@ -232,6 +237,10 @@ class Gann():
             if type(v) == np.ndarray and len(v.shape) > 1: # If v is a matrix, use hinton plotting
                 TFT.hinton_plot(v, fig=self.grabvarFigures[fig_index], title=names[i] + ' at step ' + str(step))
                 fig_index += 1
+            elif type(v) == np.ndarray and len(v.shape) == 1:
+                #v is a vector, use histogram
+                TFT.histogram_plot(v, fig=self.grabvarFigures[fig_index],title = "Histogram of "+ names[i])
+                fig_index += 1
             else:
                 pass
                 #print(v, end="\n\n")
@@ -241,6 +250,7 @@ class Gann():
         self.training_session(epochs, sess = sess, continued = continued)
         self.test_on_trains(sess = self.current_session, bestk = bestk)
         self.testing_session(sess = self.current_session, bestk = bestk)
+
         self.close_current_session(view = False)
         PLT.ioff()
 
@@ -391,13 +401,13 @@ def autoex(epochs=300, nbits=4, lrate=0.03, showint=100, mbs=None, vfrac=0.1, tf
 
 
 
-def countex(epochs=4000, nbits=10, ncases=500, lrate=0.05, showint=500, mbs=30, cfrac = 1.0, vfrac=0.1, tfrac=0.1, vint=200, bestk=1):
+def countex(epochs=600, nbits=10, ncases=500, lrate=0.1, showint=500, mbs=30, cfrac = 1.0, vfrac=0.1, tfrac=0.1, vint=200, bestk=1):
     case_generator = (lambda: TFT.gen_vector_count_cases(ncases,nbits))
     cman = Caseman(cfunc=case_generator, cfrac=cfrac, vfrac=vfrac, tfrac=tfrac)
     ann = Gann(netDims=[nbits, nbits*3, nbits*3, nbits*3, nbits+1], cMan=cman, learningRate=lrate, showInterval=showint,
                mbs=mbs, validationInterval=vint,
                hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax', lossFunc = 'softmax_cross_entropy',
-               optimizer = 'momentum', momentum = 0.1, weightRange=(-.1,.1), displayBiases=[], displayWeights=[0])
+               optimizer = 'gradient_descent', momentum = 0.1, weightRange=(-.1,.1), displayBiases=[0, 3], displayWeights=[])
     ann.run(epochs, bestk = bestk)
     #TFT.plot_training_history(ann.error_history, ann.validationHistory, xtitle="Epoch", ytitle="Error",
                            #   title="training history", fig=True)

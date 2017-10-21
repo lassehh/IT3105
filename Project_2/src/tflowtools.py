@@ -298,23 +298,24 @@ def pp_matrix(m,style='{:.3f}'):
 
 # *******  DATA PLOTTING ROUTINES *********
 
-def simple_plot(yvals,xvals=None,xtitle='X',ytitle='Y',title='Y = F(X)'):
+def simple_plot(yvals,xvals=None,xtitle='X',ytitle='Y',title='Y = F(X)', label = ''):
     xvals = xvals if xvals is not None else list(range(len(yvals)))
-    PLT.plot(xvals,yvals)
+    PLT.plot(xvals,yvals, label = label)
     PLT.pause(0.01)
     PLT.xlabel(xtitle); PLT.ylabel(ytitle); PLT.title(title)
+    PLT.legend()
     PLT.draw()
 
 # Each history is a list of pairs (timestamp, value).
 def plot_training_history(error_hist,validation_hist=[],xtitle='Epoch',ytitle='Error',title='History',fig=True):
-    PLT.ion()
+    #PLT.ion()
     if fig: PLT.figure()
     if len(error_hist) > 0:
-        simple_plot([p[1] for p in error_hist], [p[0] for p in error_hist],xtitle=xtitle,ytitle=ytitle,title=title)
+        simple_plot([p[1] for p in error_hist], [p[0] for p in error_hist],xtitle=xtitle,ytitle=ytitle,title=title, label = "Training loss")
         #PLT.hold(True)
     if len(validation_hist) > 0:
-        simple_plot([p[1] for p in validation_hist], [p[0] for p in validation_hist],xtitle=xtitle,ytitle=ytitle,title=title)
-    PLT.ioff()
+        simple_plot([p[1] for p in validation_hist], [p[0] for p in validation_hist],xtitle=xtitle,ytitle=ytitle,title=title, label = "Validation loss")
+   # PLT.ioff()
 
 # alpha = transparency
 def simple_scatter_plot(points,alpha=0.5,radius=3):
@@ -357,6 +358,17 @@ def hinton_plot(matrix, maxval=None, maxsize=1, fig=None,trans=True,scale=True, 
         axes.add_patch(blob)
     axes.autoscale_view()
     PLT.draw()
+    PLT.pause(.001)
+
+
+def histogram_plot(data, fig=None, xtitle = "Biases", ytitle = "Count", title = "Histogram"):
+    hfig = fig if fig else PLT.figure()
+    hfig.suptitle(title, fontsize=18)
+    axes = hfig.gca()
+    axes.clear()
+    n, bins, patches = axes.hist(data, bins = 'auto', histtype = 'stepfilled')
+    PLT.xlabel(xtitle), PLT.ylabel(ytitle)#, PLT.title(title)
+    hfig.show()
     PLT.pause(.001)
 
 # This graphically displays a matrix with color codes for positive, negative, small positive and small negative,
