@@ -9,10 +9,10 @@ import tflowtools as TFT
 
 class Gann():
 
-    def __init__(self, netDims, cMan, hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax',
+    def __init__(self, name, netDims, cMan, hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax',
                  lossFunc = 'MSE', optimizer = 'gradient_descent', learningRate = 0.1, momentum = 0.1, weightRange = (-1,1),
-                 mbs = 10, mapBatchSize = 0, mapLayers = None, mapDendrograms = [],
-                 showInterval = 100, validationInterval = 100, displayWeights =[], displayBiases = []):
+                 mbs = 10, mapBatchSize = 0, mapLayers = None, mapDendograms = None,
+                 displayWeights =[], displayBiases = []):
 
         # SCENARIO PARAMETERS
         self.networkDims = netDims                              # Sizes of each layer of neurons
@@ -35,8 +35,7 @@ class Gann():
         self.dendrogramVars = []
 
         # CONVENIENCE PARAMETERS
-        self.showInterval = showInterval                        # Frequency of showing grabbed variables
-        self.validationInterval = validationInterval            # Frequency of running validation runs
+        self.name = name                                        # Frequency of running validation runs
         self.globalTrainingStep = 0                             # Enables coherent data-storage during extra training runs (see runmore)
         self.input = None                                       # Pointer to the input of the network, where to feed the network cases/mbs
         self.target = None                                      # Correct classification for each incoming case
@@ -283,7 +282,10 @@ class Gann():
                 pass
                 #print(v, end="\n\n")
 
-    def run(self, epochs=100, sess=None, continued=False, bestk=None):
+    def run(self, showInterval = 100, validationInterval = 100, epochs=100, sess=None, continued=False, bestk=None):
+        self.showInterval = showInterval                        # Frequency of showing grabbed variables
+        self.validationInterval = validationInterval
+
         PLT.ion()
         self.training_session(epochs, sess = sess, continued = continued)
         self.test_on_trains(sess = self.current_session, bestk = bestk)
@@ -452,37 +454,31 @@ def autoex(epochs=300, nbits=4, lrate=0.03, showint=100, mbs=None, vfrac=0.1, tf
     mbs = mbs if mbs else size
     case_generator = (lambda : TFT.gen_all_one_hot_cases(2**nbits))
     cman = Caseman(cfunc = case_generator, vfrac = vfrac, tfrac = tfrac)
-    ann = Gann(netDims = [size, nbits, size], cMan = cman, learningRate = lrate, showInterval = showint, mbs = mbs,
-               validationInterval = vint, hiddenActivationFunc = 'relu', outputActivationFunc = 'none')
+    ann = Gann(netDims = [size, nbits, size], cMan = cman, learningRate = lrate, mbs = mbs,
+               hiddenActivationFunc = 'relu', outputActivationFunc = 'none')
     #ann.gen_probe(0, 'wgt', ('hist','avg'))  # Plot a histogram and avg of the incoming weights to module 0.
     #ann.gen_probe(1, 'out', ('avg','max'))  # Plot average and max value of module 1's output vector
     #ann.add_grabvar(0, 'wgt') # Add a grabvar (to be displayed in its own matplotlib window).
-    ann.run(epochs, bestk = bestk)
+    ann.run(epochs = epochs, showInterval = showint, validationInterval = vint, bestk = bestk)
     ann.runmore(epochs*2, bestk = bestk)
     return ann
 
 
-
-
-def countex(epochs=200, nbits=15, ncases=500, lrate=0.05, showint=500, mbs=30, cfrac = 1.0, vfrac=0.1, tfrac=0.1, vint=200, bestk=1):
-    mapBatchSize = 2**nbits
-
+def countex(epochs=200, nbits=10, ncases=500, lrate=0.1, showint=500, mbs=10, cfrac = 1.0, vfrac=0.1, tfrac=0.1, vint=20, bestk=1):
     case_generator = (lambda: TFT.gen_vector_count_cases(ncases,nbits))
     cman = Caseman(cfunc=case_generator, cfrac=cfrac, vfrac=vfrac, tfrac=tfrac)
-    ann = Gann(netDims=[nbits, nbits*2, nbits+1], cMan=cman, learningRate=lrate, showInterval=showint,
-               mbs=mbs, validationInterval=vint,
+    ann = Gann(name = 'countex', netDims=[nbits, nbits*3, nbits*3, nbits*3, nbits+1], cMan=cman, learningRate=lrate,
+               mbs=mbs,
                hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax', lossFunc = 'softmax_cross_entropy',
                optimizer = 'gradient_descent', momentum = 0.1, weightRange=(-.5,.5), displayBiases=[], displayWeights=[], mapBatchSize = mapBatchSize, mapLayers = [0,1,2])
-    ann.run(epochs, bestk = bestk)
-
 
     # generate all possible input cases
     case_generator = (lambda: TFT.gen_vector_count_cases(mapBatchSize, nbits, random = False))
     ann.run_mapping_routine(case_generator)
+
+    ann.run(epochs = epochs, showInterval = showint, validationInterval = vint, bestk = bestk)
     #TFT.plot_training_history(ann.error_history, ann.validationHistory, xtitle="Epoch", ytitle="Error",
                            #   title="training history", fig=True)
-
     PLT.pause(10)
     return ann
-
-countex()
+#countex()
