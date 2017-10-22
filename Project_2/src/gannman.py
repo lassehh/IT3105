@@ -26,11 +26,6 @@ class GannMan:
         # Generate cases and layers for specific data source cases
         if(dataSource == 'bitcounter'):
             case_generator = (lambda: TFT.gen_vector_count_cases(dataSourceParas[0], dataSourceParas[1]))
-            for i in range(0,len(networkDims)):
-                if i == len(networkDims) - 1:
-                    networkDims[i] = dataSourceParas[1] + 1
-                    break
-                else: networkDims[i] = dataSourceParas[1] * networkDims[i]
         else:
             raise NotImplementedError("Datasource: " + dataSource + " is not implemented")
 
@@ -47,7 +42,7 @@ class GannMan:
 
     def run_network(self, network, showInterval = 100, validationInterval = 100, epochs=100, sess=None, continued=False, bestk=None):
         network.run(epochs=epochs, showInterval=showInterval, validationInterval=validationInterval, bestk=bestk)
-        time.sleep(10)
+        exit = input("Press anything to continue ..")
 
     def run_network_more(self, epochs, name):
         #TODO: do gann.runmore()

@@ -52,17 +52,17 @@ class GannManUi:
         print("Specify scenario parameters ...")
         name = input("Network name (for later reference): ")
         networkDims = input("Network dimensions [l1 l2 l3]: ")
-        hiddenActivationFunc = input("Hidden activation function (relu, sigmoid or tanh): ")
-        outputActivationFunc = input("Output activation function (softmax, none): ")
-        lossFunc = input("Loss function (MSE, softmax_cross_entropy, sigmoid_cross_entropy): ")
-        optimizer = input("Optimizer (gradient_descent or momentum): ")
+        hiddenActivationFunc = "relu"#input("Hidden activation function (relu, sigmoid or tanh): ")
+        outputActivationFunc = "softmax"#input("Output activation function (softmax, none): ")
+        lossFunc = "softmax_cross_entropy"#input("Loss function (MSE, softmax_cross_entropy, sigmoid_cross_entropy): ")
+        optimizer = "momentum"#input("Optimizer (gradient_descent or momentum): ")
         learningRate = input("Learning rate <0, 1>: ")
-        weightInit = input("Initial weight range (or scaled): ")
-        dataSource = input("Data source (bitcounter, autoencoder, MNIST...): ")
-        dataSourceParas = input("Data source parameters (Ex: nbits for bit-counter): ")
-        caseFrac = input("Case fraction: ")
-        valFrac = input("Validation fraction: ")
-        testFrac = input("Final testing fraction: ")
+        weightInit = "-0.1 0.1"#input("Initial weight range (or scaled): ")
+        dataSource = "bitcounter"#input("Data source (bitcounter, autoencoder, MNIST...): ")
+        dataSourceParas = "500 15"#input("Data source parameters (Ex: nbits for bit-counter): ")
+        caseFrac = "1"#input("Case fraction: ")
+        valFrac = "0.1"#input("Validation fraction: ")
+        testFrac = "0.1"#input("Final testing fraction: ")
         miniBatchSize = input("Mini batch size: ")
         mapBatchSize = input("Map batch size: ")
         steps = input("Steps/Number of mbs to be run through the system in training: ")
@@ -127,7 +127,7 @@ class GannManUi:
 
 if __name__ == '__main__':
     ui = GannManUi()
-    #ui.read_scenario_menu()
-    #ui.select_created_scenario()
-    ui.run()# doesn't work with debugging, instead run the function you want to debuf directly
+    ui.read_scenario_menu()
+    ui.select_created_scenario()
+    #ui.run()# doesn't work with debugging, instead run the function you want to debuf directly
     #ex: read_scenario_menu() to experiment with different networks parameters
