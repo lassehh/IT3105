@@ -305,6 +305,7 @@ def simple_plot(yvals,xvals=None,xtitle='X',ytitle='Y',title='Y = F(X)', label =
     PLT.xlabel(xtitle); PLT.ylabel(ytitle); PLT.title(title)
     PLT.legend()
     PLT.draw()
+    PLT.pause(.001)
 
 # Each history is a list of pairs (timestamp, value).
 def plot_training_history(error_hist,validation_hist=[],xtitle='Epoch',ytitle='Error',title='History',fig=True):

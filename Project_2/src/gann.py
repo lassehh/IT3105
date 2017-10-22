@@ -293,12 +293,12 @@ class Gann():
         for bias in self.displayBiases:
             self.add_grabvar(bias, 'bias')
 
-        PLT.ion()
+        #PLT.ion()
         self.training_session(epochs, sess = sess, continued = continued)
         self.test_on_trains(sess = self.current_session, bestk = bestk)
         self.testing_session(sess = self.current_session, bestk = bestk)
         self.close_current_session(view = False)
-        PLT.ioff()
+        #PLT.ioff()
 
     def run_mapping(self, case_generator = None, mapBatchSize = 0, mapLayers = [], mapDendrograms = []):
         self.mapBatchSize = mapBatchSize        # Size of batch of cases used for a map test. 0 indicates no map test
@@ -486,13 +486,13 @@ def countex(epochs=100, nbits=4, ncases=500, lrate=0.1, showint=500, mbs=10, cfr
                hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax', lossFunc = 'softmax_cross_entropy',
                optimizer = 'momentum', momentum = 0.1, weightRange=(-.1,.1))
 
-    ann.run(epochs = epochs, showInterval = showint, validationInterval = vint, displayBiases=[1,2], displayWeights=[2], plot_type = 'hinton', bestk = bestk)
+    ann.run(epochs = epochs, showInterval = showint, validationInterval = vint, displayBiases=[], displayWeights=[], plot_type = 'hinton', bestk = bestk)
     #TFT.plot_training_history(ann.error_history, ann.validationHistory, xtitle="Epoch", ytitle="Error",
                            #   title="training history", fig=True)
 
     # generate all possible input cases
-    case_generator = (lambda: TFT.gen_vector_count_cases(mapBatchSize, nbits, random=False))
-    ann.run_mapping(case_generator, mapBatchSize = mapBatchSize, mapLayers = [], mapDendrograms = [])
+    #case_generator = (lambda: TFT.gen_vector_count_cases(mapBatchSize, nbits, random=False))
+    #ann.run_mapping(case_generator, mapBatchSize = mapBatchSize, mapLayers = [], mapDendrograms = [])
 
     PLT.pause(10)
     return ann
