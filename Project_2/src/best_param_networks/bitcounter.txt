@@ -1,0 +1,12 @@
+netDims,15 13 30 30 30 16
+hiddenActivFunc,relu
+outputActivFunc,softmax
+lossFunc,softmax_cross_entropy
+optimizer,momentum
+learningRate,0.3
+weightInit,-0.1 0.1
+dSourceParams,500 15
+caseFrac,1
+valFrac,0.1
+testFrac,0.1
+mbs,40
