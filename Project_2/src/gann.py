@@ -11,7 +11,7 @@ class Gann():
 
     def __init__(self, name, netDims, cMan, hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax',
                  lossFunc = 'MSE', optimizer = 'gradient_descent', learningRate = 0.1, momentum = 0.1, weightRange = (-1,1),
-                 mbs = 10, mapBatchSize = 0, mapLayers = None, mapDendograms = None,
+                 mbs = 10, mapBatchSize = 0, mapLayers = [], mapDendrograms = [],
                  displayWeights =[], displayBiases = []):
 
         # SCENARIO PARAMETERS
@@ -299,19 +299,21 @@ class Gann():
             cases = case_generator() if case_generator else self.caseMan.get_mapping_cases(self.mapBatchSize)
             self.add_mapvars()
             self.add_dendrogramvars()
-            mapvals = self.do_mapping(session = self.current_session, cases = cases)
+            mapvals, dendrovals = self.do_mapping(session = self.current_session, cases = cases)
 
-            #labels = [TFT.bits_to_str(s[1]) for s in cases]
-            labels = [str(np.argmax(c[1])) for c in cases]
             names = [x.name for x in self.mapVars]
             for i, v in enumerate(mapvals):
                 # if names: print("   " + names[i] + " = ", end="\n")
                 if type(v) == np.ndarray and len(v.shape) > 1:  # If v is a matrix, use hinton plotting
                     TFT.hinton_plot(v, fig=None, title='Activation pattern of layer ' + names[i])
-            if len(self.mapDendrograms) > 0:
-                # labels = [TFT.bits_to_str(s[1]) for s in cases]
-                labels = [str(np.argmax(c[1])) for c in cases]
 
+            if len(self.mapDendrograms) > 0:
+                names = [x.name for x in self.dendrogramVars]
+                labels = [TFT.bits_to_str(s[0]) for s in cases]
+                #labels = [str(np.argmax(c[1])) for c in cases]
+                for (i, v) in enumerate(dendrovals):
+                    TFT.dendrogram(v, labels, title = 'Dendrogram of ' + names[i])
+            noob = 0
 
     # After a run is complete, runmore allows us to do additional training on the network, picking up where we
     # left off after the last call to run (or runmore).  Use of the "continued" parameter (along with
@@ -464,21 +466,25 @@ def autoex(epochs=300, nbits=4, lrate=0.03, showint=100, mbs=None, vfrac=0.1, tf
     return ann
 
 
-def countex(epochs=200, nbits=10, ncases=500, lrate=0.1, showint=500, mbs=10, cfrac = 1.0, vfrac=0.1, tfrac=0.1, vint=20, bestk=1):
+def countex(epochs=100, nbits=4, ncases=500, lrate=0.1, showint=500, mbs=10, cfrac = 1.0, vfrac=0.1, tfrac=0.1, vint=20, bestk=1):
+    mapBatchSize = 2**nbits
     case_generator = (lambda: TFT.gen_vector_count_cases(ncases,nbits))
     cman = Caseman(cfunc=case_generator, cfrac=cfrac, vfrac=vfrac, tfrac=tfrac)
-    ann = Gann(name = 'countex', netDims=[nbits, nbits*3, nbits*3, nbits*3, nbits+1], cMan=cman, learningRate=lrate,
-               mbs=mbs,
+    ann = Gann(name = 'countex', netDims=[nbits, nbits*3, nbits*3, nbits+1], cMan=cman, learningRate=lrate, mbs=mbs,
                hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax', lossFunc = 'softmax_cross_entropy',
-               optimizer = 'gradient_descent', momentum = 0.1, weightRange=(-.5,.5), displayBiases=[], displayWeights=[], mapBatchSize = mapBatchSize, mapLayers = [0,1,2])
-
-    # generate all possible input cases
-    case_generator = (lambda: TFT.gen_vector_count_cases(mapBatchSize, nbits, random = False))
-    ann.run_mapping_routine(case_generator)
+               optimizer = 'momentum', momentum = 0.1, weightRange=(-.1,.1), displayBiases=[], displayWeights=[],
+               mapBatchSize = mapBatchSize, mapLayers = [], mapDendrograms = [2])
 
     ann.run(epochs = epochs, showInterval = showint, validationInterval = vint, bestk = bestk)
     #TFT.plot_training_history(ann.error_history, ann.validationHistory, xtitle="Epoch", ytitle="Error",
                            #   title="training history", fig=True)
+
+    # generate all possible input cases
+    case_generator = (lambda: TFT.gen_vector_count_cases(mapBatchSize, nbits, random=False))
+    ann.run_mapping_routine(case_generator)
+
     PLT.pause(10)
     return ann
-#countex()
+
+
+countex()
