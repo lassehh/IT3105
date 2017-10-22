@@ -8,47 +8,50 @@ import tflowtools as TFT
 
 
 class Gann():
+    grabVarPlotType = 'hinton' # 'hinton' or 'matrix'
 
     def __init__(self, name, netDims, cMan, hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax',
                  lossFunc = 'MSE', optimizer = 'gradient_descent', learningRate = 0.1, momentum = 0.1, weightRange = (-1,1),
-                 mbs = 10, mapBatchSize = 0, mapLayers = [], mapDendrograms = [],
-                 displayWeights =[], displayBiases = []):
+                 mbs = 10):
 
         # SCENARIO PARAMETERS
-        self.networkDims = netDims                              # Sizes of each layer of neurons
-        self.hiddenActivationFunc = hiddenActivationFunc        # Activation function to use for each hidden layer
-        self.outputActivationFunc = outputActivationFunc        # Activation function for the output of the network
-        self.lossFunc = lossFunc                                # Quantity to minimize during training
-        self.optimizer = optimizer                              # Optimizer used in learning to minimize the loss. 'gradient_descent' or 'momentum'
-        self.learningRate = learningRate                        # How large steps to take in the direction of the gradient
-        self.momentum = momentum                                # The momentum, only relevant when self.optimizer = 'momentum'
-        self.weightInit = weightRange                           # Upper and lower band for random initialization of weights
-        self.caseMan = cMan                                     # Case manager object with a data source
-        self.miniBatchSize = mbs                                # Amount of cases in each batch which are used for each run
-        self.mapBatchSize = mapBatchSize                        # Size of batch of cases used for a map test. 0 indicates no map test
-        self.mapLayers = mapLayers                              # List of layers(their indices) to be visualized during a map test
-        self.mapDendrograms = mapDendrograms                    # List of layers(their indices) whose activation patterns will be used to make dendograms
-        self.grabVars = []                                      # Variables (weights and/or biases) to be monitored (by gann code) during a run.
-        self.displayWeights = displayWeights                    # List of the weight arrays(their hidden layer indices) to be visualized at the end of the run
-        self.displayBiases = displayBiases                      # List of the bias vectors(their hidden layer indices) to be visualized at the end of the run
+        self.networkDims = netDims                        # Sizes of each layer of neurons
+        self.hiddenActivationFunc = hiddenActivationFunc  # Activation function to use for each hidden layer
+        self.outputActivationFunc = outputActivationFunc  # Activation function for the output of the network
+        self.lossFunc = lossFunc                          # Quantity to minimize during training
+        self.optimizer = optimizer                        # Optimizer used in learning to minimize the loss. 'gradient_descent' or 'momentum'
+        self.learningRate = learningRate                  # How large steps to take in the direction of the gradient
+        self.momentum = momentum                          # The momentum, only relevant when self.optimizer = 'momentum'
+        self.weightInit = weightRange                     # Upper and lower band for random initialization of weights
+        self.caseMan = cMan                               # Case manager object with a data source
+        self.miniBatchSize = mbs                          # Amount of cases in each batch which are used for each run
+        self.grabVars = []                                # Variables (weights and/or biases) to be monitored (by gann code) during a run.
         self.mapVars = []
         self.dendrogramVars = []
 
+        # Grabbed variables ( defined in the call to run() )
+        self.displayWeights = []                          # List of the weight arrays(their hidden layer indices) to be visualized at the end of the run. 0 is the first hidden layer
+        self.displayBiases = []                           # List of the bias vectors(their hidden layer indices) to be visualized at the end of the run. 0 is the first hidden layer
+        # Mapping variables (defined when a call to run_mapping() is made)
+        self.mapBatchSize = 0                             # Size of batch of cases used for a map test. 0 indicates no map test
+        self.mapLayers = []                               # List of layers(their indices) to be visualized during a map test. 0 is the input layer
+        self.mapDendrograms = []                          # List of layers(their indices) whose activation patterns will be used to make dendrograms. 0 is the first hidden layer
+
         # CONVENIENCE PARAMETERS
-        self.name = name                                        # Frequency of running validation runs
-        self.globalTrainingStep = 0                             # Enables coherent data-storage during extra training runs (see runmore)
-        self.input = None                                       # Pointer to the input of the network, where to feed the network cases/mbs
-        self.target = None                                      # Correct classification for each incoming case
-        self.output = None                                      # Pointer to the (softmaxed)output of the network
+        self.name = name                                  # Frequency of running validation runs
+        self.globalTrainingStep = 0                       # Enables coherent data-storage during extra training runs (see runmore)
+        self.input = None                                 # Pointer to the input of the network, where to feed the network cases/mbs
+        self.target = None                                # Correct classification for each incoming case
+        self.output = None                                # Pointer to the (softmaxed)output of the network
         self.rawOutput = None
-        self.probes = None                                      # Pointer to the probes (biases/weights monitored by tensorboard) which TF keeps track of
-        self.error = None                                       # TF loss function variable created by specifying lossFunc
+        self.probes = None                                # Pointer to the probes (biases/weights monitored by tensorboard) which TF keeps track of
+        self.error = None                                 # TF loss function variable created by specifying lossFunc
         self.output = None
         self.trainer = None
 
 
         # DATA STORAGE
-        self.grabvarFigures = []                                # One matplotlib figure for each grabvar
+        self.grabvarFigures = []                          # One matplotlib figure for each grabvar
         self.validationHistory = []
         self.modules = []
         self.build()
@@ -105,11 +108,7 @@ class Gann():
         self.target = tf.placeholder(tf.float64, shape=(None,gmod.outsize), name='Target')
         self.configure_learning()
 
-        # Add all grabbed variables
-        for weight in self.displayWeights:
-            self.add_grabvar(weight, 'wgt')
-        for bias in self.displayBiases:
-            self.add_grabvar(bias, 'bias')
+
 
     # The optimizer knows to gather up all "trainable" variables in the function graph and compute
     # derivatives of the error function with respect to each component of each variable, i.e. each weight
@@ -231,7 +230,7 @@ class Gann():
         if len(cases) > 0:
             _, grabvals = self.do_testing(sess, cases, msg='Final testing', bestk=bestk)
             if len(grabvals) > 0:
-                self.display_grabvars(grabvals, self.grabVars)
+                self.display_grabvars(grabvals, self.grabVars, step = self.globalTrainingStep)
 
     def consider_validation_testing(self, epoch, sess):
         if self.validationInterval and (epoch % self.validationInterval == 0):
@@ -263,28 +262,36 @@ class Gann():
     def display_loss_and_error(self):
         pass
 
-    #Currently only plots when the grabbed variable is a matrix. Don'tknow what to do with biases
+
     def display_grabvars(self, grabbed_vals, grabbed_vars, step=1):
         names = [x.name for x in grabbed_vars]
-        msg = "Grabbed Variables at Step " + str(step)
-        #print("\n" + msg, end="\n")
         fig_index = 0
         for i, v in enumerate(grabbed_vals):
-            #if names: print("   " + names[i] + " = ", end="\n")
-            if type(v) == np.ndarray and len(v.shape) > 1: # If v is a matrix, use hinton plotting
-                TFT.hinton_plot(v, fig=self.grabvarFigures[fig_index], title=names[i] + ' at step ' + str(step))
-                fig_index += 1
-            elif type(v) == np.ndarray and len(v.shape) == 1:
-                #v is a vector, use histogram
-                TFT.histogram_plot(v, fig=self.grabvarFigures[fig_index],title = "Histogram of "+ names[i])
-                fig_index += 1
-            else:
+            if type(v) == np.ndarray and len(v.shape) > 1: # If v is a matrix
                 pass
-                #print(v, end="\n\n")
+            elif type(v) == np.ndarray and len(v.shape) == 1: # if v is a vector (i.e. a bias vector)
+                v = np.array([v]) # convert to matrix
 
-    def run(self, showInterval = 100, validationInterval = 100, epochs=100, sess=None, continued=False, bestk=None):
+            if self.grabVarPlotType == 'hinton':
+                TFT.hinton_plot(v, fig=self.grabvarFigures[fig_index], title='Hinton plot of ' + names[i] + ' at step ' + str(step))
+            else: #( self.grabVarPlotType == 'matrix' )
+                TFT.display_matrix(v, fig=self.grabvarFigures[fig_index], title='Matrix of ' + names[i] + ' at step ' + str(step))
+            fig_index += 1
+
+    def run(self, showInterval = 100, validationInterval = 100, displayWeights = [], displayBiases = [],
+            plot_type = 'hinton', epochs=100, sess=None, continued=False, bestk=None):
         self.showInterval = showInterval                        # Frequency of showing grabbed variables
         self.validationInterval = validationInterval
+
+        self.grabVarPlotType = plot_type      # 'hinton' or 'matrix'
+
+        self.displayWeights = displayWeights  # List of the weight arrays(their hidden layer indices) to be visualized at the end of the run
+        self.displayBiases = displayBiases  # List of the bias vectors(their hidden layer indices) to be visualized at the end of the run
+        # Add all grabbed variables
+        for weight in self.displayWeights:
+            self.add_grabvar(weight, 'wgt')
+        for bias in self.displayBiases:
+            self.add_grabvar(bias, 'bias')
 
         PLT.ion()
         self.training_session(epochs, sess = sess, continued = continued)
@@ -293,27 +300,32 @@ class Gann():
         self.close_current_session(view = False)
         PLT.ioff()
 
-    def run_mapping_routine(self, case_generator = None, dendrogram = False, hinton = True):
+    def run_mapping(self, case_generator = None, mapBatchSize = 0, mapLayers = [], mapDendrograms = []):
+        self.mapBatchSize = mapBatchSize        # Size of batch of cases used for a map test. 0 indicates no map test
+        self.mapLayers = mapLayers              # List of layers(their indices) to be visualized during a map test
+        self.mapDendrograms = mapDendrograms    # List of layers(their indices) whose activation patterns will be used to make dendrograms
+
         self.reopen_current_session()
         if self.mapBatchSize:
+            # either a chosen set of cases or a random subset of the training cases:
             cases = case_generator() if case_generator else self.caseMan.get_mapping_cases(self.mapBatchSize)
+
+            # Add the monitored variables
             self.add_mapvars()
             self.add_dendrogramvars()
             mapvals, dendrovals = self.do_mapping(session = self.current_session, cases = cases)
 
+            # Plotting
             names = [x.name for x in self.mapVars]
             for i, v in enumerate(mapvals):
-                # if names: print("   " + names[i] + " = ", end="\n")
                 if type(v) == np.ndarray and len(v.shape) > 1:  # If v is a matrix, use hinton plotting
                     TFT.hinton_plot(v, fig=None, title='Activation pattern of layer ' + names[i])
-
             if len(self.mapDendrograms) > 0:
                 names = [x.name for x in self.dendrogramVars]
                 labels = [TFT.bits_to_str(s[0]) for s in cases]
                 #labels = [str(np.argmax(c[1])) for c in cases]
                 for (i, v) in enumerate(dendrovals):
                     TFT.dendrogram(v, labels, title = 'Dendrogram of ' + names[i])
-            noob = 0
 
     # After a run is complete, runmore allows us to do additional training on the network, picking up where we
     # left off after the last call to run (or runmore).  Use of the "continued" parameter (along with
@@ -472,16 +484,15 @@ def countex(epochs=100, nbits=4, ncases=500, lrate=0.1, showint=500, mbs=10, cfr
     cman = Caseman(cfunc=case_generator, cfrac=cfrac, vfrac=vfrac, tfrac=tfrac)
     ann = Gann(name = 'countex', netDims=[nbits, nbits*3, nbits*3, nbits+1], cMan=cman, learningRate=lrate, mbs=mbs,
                hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax', lossFunc = 'softmax_cross_entropy',
-               optimizer = 'momentum', momentum = 0.1, weightRange=(-.1,.1), displayBiases=[], displayWeights=[],
-               mapBatchSize = mapBatchSize, mapLayers = [], mapDendrograms = [2])
+               optimizer = 'momentum', momentum = 0.1, weightRange=(-.1,.1))
 
-    ann.run(epochs = epochs, showInterval = showint, validationInterval = vint, bestk = bestk)
+    ann.run(epochs = epochs, showInterval = showint, validationInterval = vint, displayBiases=[1,2], displayWeights=[2], plot_type = 'hinton', bestk = bestk)
     #TFT.plot_training_history(ann.error_history, ann.validationHistory, xtitle="Epoch", ytitle="Error",
                            #   title="training history", fig=True)
 
     # generate all possible input cases
     case_generator = (lambda: TFT.gen_vector_count_cases(mapBatchSize, nbits, random=False))
-    ann.run_mapping_routine(case_generator)
+    ann.run_mapping(case_generator, mapBatchSize = mapBatchSize, mapLayers = [], mapDendrograms = [])
 
     PLT.pause(10)
     return ann
