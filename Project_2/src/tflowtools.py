@@ -401,7 +401,7 @@ def display_matrix(matrix,fig=None,trans=True,scale=True, title='Matrix',tform='
                   color='black',size=tsize)
     axes.autoscale_view()
     PLT.draw()
-    PLT.pause(1)
+    PLT.pause(.1)
 
 # ****** Principle Component Analysis (PCA) ********
 # This performs the basic operations outlined in "Python Machine Learning" (pp.128-135).  It begins with

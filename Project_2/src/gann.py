@@ -8,6 +8,7 @@ import tflowtools as TFT
 
 
 class Gann():
+    grabVarPlotType = 'hinton' # 'hinton' or 'matrix'
 
     def __init__(self, name, netDims, cMan, hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax',
                  lossFunc = 'MSE', optimizer = 'gradient_descent', learningRate = 0.1, momentum = 0.1, weightRange = (-1,1),
@@ -261,28 +262,28 @@ class Gann():
     def display_loss_and_error(self):
         pass
 
-    #Currently only plots when the grabbed variable is a matrix. Don'tknow what to do with biases
+
     def display_grabvars(self, grabbed_vals, grabbed_vars, step=1):
         names = [x.name for x in grabbed_vars]
-        msg = "Grabbed Variables at Step " + str(step)
-        #print("\n" + msg, end="\n")
         fig_index = 0
         for i, v in enumerate(grabbed_vals):
-            #if names: print("   " + names[i] + " = ", end="\n")
-            if type(v) == np.ndarray and len(v.shape) > 1: # If v is a matrix, use hinton plotting
-                TFT.hinton_plot(v, fig=self.grabvarFigures[fig_index], title=names[i] + ' at step ' + str(step))
-                fig_index += 1
-            elif type(v) == np.ndarray and len(v.shape) == 1:
-                #v is a vector, use histogram
-                TFT.histogram_plot(v, fig=self.grabvarFigures[fig_index],title = "Histogram of "+ names[i] + ' at step ' + str(step))
-                fig_index += 1
-            else:
+            if type(v) == np.ndarray and len(v.shape) > 1: # If v is a matrix
                 pass
-                #print(v, end="\n\n")
+            elif type(v) == np.ndarray and len(v.shape) == 1: # if v is a vector (i.e. a bias vector)
+                v = np.array([v]) # convert to matrix
 
-    def run(self, showInterval = 100, validationInterval = 100, displayWeights = [], displayBiases = [], epochs=100, sess=None, continued=False, bestk=None):
+            if self.grabVarPlotType == 'hinton':
+                TFT.hinton_plot(v, fig=self.grabvarFigures[fig_index], title='Hinton plot of ' + names[i] + ' at step ' + str(step))
+            else: #( self.grabVarPlotType == 'matrix' )
+                TFT.display_matrix(v, fig=self.grabvarFigures[fig_index], title='Matrix of ' + names[i] + ' at step ' + str(step))
+            fig_index += 1
+
+    def run(self, showInterval = 100, validationInterval = 100, displayWeights = [], displayBiases = [],
+            plot_type = 'hinton', epochs=100, sess=None, continued=False, bestk=None):
         self.showInterval = showInterval                        # Frequency of showing grabbed variables
         self.validationInterval = validationInterval
+
+        self.grabVarPlotType = plot_type      # 'hinton' or 'matrix'
 
         self.displayWeights = displayWeights  # List of the weight arrays(their hidden layer indices) to be visualized at the end of the run
         self.displayBiases = displayBiases  # List of the bias vectors(their hidden layer indices) to be visualized at the end of the run
@@ -325,7 +326,6 @@ class Gann():
                 #labels = [str(np.argmax(c[1])) for c in cases]
                 for (i, v) in enumerate(dendrovals):
                     TFT.dendrogram(v, labels, title = 'Dendrogram of ' + names[i])
-            noob = 0
 
     # After a run is complete, runmore allows us to do additional training on the network, picking up where we
     # left off after the last call to run (or runmore).  Use of the "continued" parameter (along with
@@ -486,13 +486,13 @@ def countex(epochs=100, nbits=4, ncases=500, lrate=0.1, showint=500, mbs=10, cfr
                hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax', lossFunc = 'softmax_cross_entropy',
                optimizer = 'momentum', momentum = 0.1, weightRange=(-.1,.1))
 
-    ann.run(epochs = epochs, showInterval = showint, validationInterval = vint, displayBiases=[2], displayWeights=[2], bestk = bestk)
+    ann.run(epochs = epochs, showInterval = showint, validationInterval = vint, displayBiases=[1,2], displayWeights=[2], plot_type = 'hinton', bestk = bestk)
     #TFT.plot_training_history(ann.error_history, ann.validationHistory, xtitle="Epoch", ytitle="Error",
                            #   title="training history", fig=True)
 
     # generate all possible input cases
     case_generator = (lambda: TFT.gen_vector_count_cases(mapBatchSize, nbits, random=False))
-    ann.run_mapping(case_generator, mapBatchSize = mapBatchSize, mapLayers = [3], mapDendrograms = [2])
+    ann.run_mapping(case_generator, mapBatchSize = mapBatchSize, mapLayers = [], mapDendrograms = [])
 
     PLT.pause(10)
     return ann
