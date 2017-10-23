@@ -3,10 +3,13 @@ import tflowtools as TFT
 import time
 
 class GannMan:
-    ganns = None
+    gann = None
 
     def __init__(self):
-        self.ganns = []
+        self.gann = None
+
+    def __del__(self):
+        pass
 
     def create_gann(self, name, networkDimsString, hiddenActivationFunc, outputActivationFunc,
                     lossFunc, optimizer, momentumFrac, learningRate, weightInit, dataSource, dSourcePars, caseFrac, valFrac,
@@ -17,6 +20,8 @@ class GannMan:
         networkDims = [int(i) for i in networkDimsString.split(" ")]
         if dSourcePars == '': dSourcePars = []
         else: dSourcePars = [int(i) for i in dSourcePars.split(" ")]
+        if momentumFrac == None: pass
+        else: momentumFrac = float(momentumFrac)
 
         # Generate cases for the data source
         case_generator = None
@@ -48,12 +53,12 @@ class GannMan:
         ann = Gann(name = name, netDims = networkDims, cMan = cMan, learningRate = float(learningRate),
                    mbs = int(miniBatchSize), hiddenActivationFunc = hiddenActivationFunc,
                    outputActivationFunc = outputActivationFunc, lossFunc = lossFunc,
-                   optimizer = optimizer, momentum = float(momentumFrac), weightRange = weightInit)
+                   optimizer = optimizer, momentum = momentumFrac, weightRange = weightInit)
         #ann.run(epochs = 200, showInterval = 200, validationInterval = 10, bestk = 1)
-        self.ganns.append(ann)
+        self.gann = ann
 
 
-    def run_network(self, network, showInterval = 100, validationInterval = 100, epochs=100, sess=None,
+    def run_gann(self, showInterval = None, validationInterval = 100, epochs=100, sess=None,
                     mapBatchSize = '', displayWeights = '', displayBiases = '', continued=False,
                     mapLayers = '', mapDendrograms = '', bestk=None):
         if mapBatchSize == '': mapBatchSize = 0
@@ -66,16 +71,12 @@ class GannMan:
         else: displayWeights = [int(i) for i in displayWeights.split(" ")]
         if displayBiases == '': displayBiases = []
         else: displayBiases = [int(i) for i in displayBiases.split(" ")]
-        network.run(epochs=epochs, showInterval=showInterval, validationInterval=validationInterval, bestk=bestk,
+        self.gann.run(epochs=epochs, showInterval=showInterval, validationInterval=validationInterval, bestk=bestk,
                     displayWeights = displayWeights, displayBiases = displayBiases)#displayBiases = displayBiases, displayWeights = displayWeights,
                     #mapDendrograms = mapDendrograms, mapBatchSize = mapBatchSize)
-        network.run_mapping(mapBatchSize = mapBatchSize, mapDendrograms = mapDendrograms, mapLayers = mapLayers)
+        self.gann.run_mapping(mapBatchSize = mapBatchSize, mapDendrograms = mapDendrograms, mapLayers = mapLayers)
 
-    def run_network_more(self, epochs, name):
-        #TODO: do gann.runmore()
-        pass
-
-    def load_best_param_networks(self, fileName):
+    def do_gann_from_config(self, fileName):
         dataSource = fileName
         name = fileName + '_best'
         momentumFrac = None
@@ -83,26 +84,45 @@ class GannMan:
             for paramLine in f:
                 paramLine = paramLine.strip("\n")
                 paramLine = paramLine.split(",")
-                paramName = paramLine[0]
-                paramLine.pop(0)
-                if paramName == 'netDims': netDims = paramLine[0]
-                elif paramName == 'hiddenActivFunc': hiddenActivationFunc = paramLine[0]
-                elif paramName == 'outputActivFunc': outputActivationfunc = paramLine[0]
-                elif paramName == 'lossFunc': lossFunc = paramLine[0]
-                elif paramName == 'optimizer': optimizer = paramLine[0]
-                elif paramName == 'momentumFrac': momentumFrac = paramLine[0]
-                elif paramName == 'learningRate': learningRate = paramLine[0]
-                elif paramName == 'weightInit': weightInit = paramLine[0]
-                elif paramName == 'dSourceParams': dSourceParams = paramLine[0]
-                elif paramName == 'caseFrac': caseFrac = paramLine[0]
-                elif paramName == 'valFrac': valFrac = paramLine[0]
-                elif paramName == 'testFrac': testFrac = paramLine[0]
-                elif paramName == 'mbs': mbs = paramLine[0]
+                if(paramLine[0] == ''): continue
+                elif(paramLine[0][0] == '#'): continue #Skip comments and empty lines
                 else:
-                    raise AssertionError("Parameter: " + paramName + ", is not a valid parameter name.")
+                    paramName = paramLine[0]
+                    paramLine.pop(0)
+                    # Run parameters
+                    if paramName == 'epochs': epochs = paramLine[0]
+                    elif paramName == 'valInt': valInt = paramLine[0]
+                    elif paramName == 'bestK': bestK = paramLine[0]
+                    elif paramName == 'mapBatchSize': mapBatchSize = paramLine[0]
+                    elif paramName == 'mapLayers': mapLayers = paramLine[0]
+                    elif paramName == 'mapDendrograms': mapDendrograms= paramLine[0]
+                    elif paramName == 'displayWeights': displayWeights = paramLine[0]
+                    elif paramName == 'displayBiases': displayBiases = paramLine[0]
+                    # Creation parameters
+                    elif paramName == 'netDims': netDims = paramLine[0]
+                    elif paramName == 'hiddenActivFunc': hiddenActivationFunc = paramLine[0]
+                    elif paramName == 'outputActivFunc': outputActivationfunc = paramLine[0]
+                    elif paramName == 'lossFunc': lossFunc = paramLine[0]
+                    elif paramName == 'optimizer': optimizer = paramLine[0]
+                    elif paramName == 'momentumFrac': momentumFrac = paramLine[0]
+                    elif paramName == 'learningRate': learningRate = paramLine[0]
+                    elif paramName == 'weightInit': weightInit = paramLine[0]
+                    elif paramName == 'dSourceParams': dSourceParams = paramLine[0]
+                    elif paramName == 'caseFrac': caseFrac = paramLine[0]
+                    elif paramName == 'valFrac': valFrac = paramLine[0]
+                    elif paramName == 'testFrac': testFrac = paramLine[0]
+                    elif paramName == 'mbs': mbs = paramLine[0]
+                    else:
+                        raise AssertionError("Parameter: " + paramName + ", is not a valid parameter name.")
         self.create_gann(name, netDims, hiddenActivationFunc, outputActivationfunc,
                     lossFunc, optimizer, momentumFrac, learningRate, weightInit, dataSource, dSourceParams, caseFrac, valFrac,
                     testFrac, mbs)
+
+        self.run_gann(epochs=int(epochs), showInterval=None,
+                                 validationInterval=int(valInt), bestk=int(bestK),
+                                 mapBatchSize=mapBatchSize,
+                                 mapLayers=mapLayers, mapDendrograms=mapDendrograms,
+                                 displayWeights=displayWeights, displayBiases=displayBiases)
 
 #man = GannMan()
 #man.load_best_param_networks(fileName='bitcounter')
