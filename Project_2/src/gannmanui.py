@@ -8,18 +8,9 @@ class GannManUi:
     gannMan = None
     pointer = '>>'
     menuIndexPointer = 0
-    stateDict = {
-        0: 'readScenario',
-        1: 'selectSavedScenario',
-        2: 'loadBest',
-        3: 'exit'
-    }
-    headerText = '--- GANN UI FOR PROJECT 2 DEMO ---'
-    initMenuOptions = {
-        0: '1. Input scenario parameters to build a network.',
-        1: '2. Select a saved scenario to run/runmore/do mappings.',
-        2: '3. Select a datasource and load a scenario with the best known parameters',
-        3: '4. Exit program.'}
+    headerText = '--- GANN UI FOR PROJECT 2 DEMO ---\n'
+    stateDict = {0: 'inputScenario', 1: 'loadScenario', 2: 'runScenario', 3: 'exit'}
+    initMenuOptions = { 0: 'INPUT scenario', 1: 'LOAD scenario', 2: 'RUN scenario', 3: 'Exit program.'}
 
     def __init__(self, state = 'init'):
         self.state = state
@@ -54,27 +45,31 @@ class GannManUi:
         print("Specify scenario parameters ...")
         name = input("Network name (for later reference): ")
         networkDims = input("Network dimensions [l1 l2 l3]: ")
-        hiddenActivationFunc = "relu"#input("Hidden activation function (relu, sigmoid or tanh): ")
-        outputActivationFunc = "softmax"#input("Output activation function (softmax, none): ")
-        lossFunc = "softmax_cross_entropy"#input("Loss function (MSE, softmax_cross_entropy, sigmoid_cross_entropy): ")
-        optimizer = "momentum"#input("Optimizer (gradient_descent or momentum): ")
+        hiddenActivationFunc = input("Hidden activation function (relu, sigmoid or tanh): ")
+        outputActivationFunc = input("Output activation function (softmax, none): ")
+        lossFunc = input("Loss function (MSE, softmax_cross_entropy, sigmoid_cross_entropy): ")
+        optimizer = input("Optimizer (gradient_descent or momentum): ")
+        if optimizer == "momentum":
+            momentumFrac= input("Amount of momentum <0,1>: ")
+        else:
+            momentumFrac = None
         learningRate = input("Learning rate <0, 1>: ")
-        weightInit = "-0.1 0.1"#input("Initial weight range (or scaled): ")
-        dataSource = "bitcounter"#input("Data source (bitcounter, autoencoder, MNIST...): ")
-        dataSourceParas = "500 15"#input("Data source parameters (Ex: nbits for bit-counter): ")
-        caseFrac = "1"#input("Case fraction: ")
-        valFrac = "0.1"#input("Validation fraction: ")
-        testFrac = "0.1"#input("Final testing fraction: ")
+        weightInit = input("Initial weight range (or scaled): ")
+        dataSource = input("Data source (bitcounter, autoencoder, MNIST...): ")
+        dataSourceParas = input("Data source parameters (Ex: nbits for bit-counter): ")
+        caseFrac = input("Case fraction: ")
+        valFrac = input("Validation fraction: ")
+        testFrac = input("Final testing fraction: ")
         miniBatchSize = input("Mini batch size: ")
 
         self.gannMan.create_gann(name, networkDims, hiddenActivationFunc, outputActivationFunc,
-                                 lossFunc, optimizer, learningRate, weightInit, dataSource, dataSourceParas,
+                                 lossFunc, optimizer, momentumFrac, learningRate, weightInit, dataSource, dataSourceParas,
                                  caseFrac, valFrac, testFrac, miniBatchSize)
 
         waitForExit = input("\nPRESS ENTER TO GO BACK MENU..")
         self.state = "init"
 
-    def select_created_scenario(self):
+    def run_scenario_menu(self):
         # Print header and selectable scenarios to screen
         os.system('cls' if os.name == 'nt' else 'clear')
         print(self.headerText)
@@ -91,9 +86,9 @@ class GannManUi:
         selectValInt = input("Validation interval: ")
         selectBestK = input("Best K: ")
         selectMapBatchSize = input("Map batch size: ")
-        selectSteps = input("Steps/Number of mbs to be run through the system in training: ")
+        #selectSteps = input("Steps/Number of mbs to be run through the system in training: ")
         selectMapLayers = input("Map layers (indices): ")
-        selectMapDendograms = input("Map dendograms (indices): ")
+        selectMapDendrograms = input("Map dendograms (indices): ")
         selectDisplayWeights = input("Weights to be visualized: ")
         selectDisplayBiases = input("Biases to be visualized: ")
         # Run the network: training and testing
@@ -102,14 +97,16 @@ class GannManUi:
             if network.name == selectName:
                 if selectAction == "run":
                     self.gannMan.run_network(network = network, epochs = int(selectEpochs), showInterval = int(selectShowInt),
-                            validationInterval = int(selectValInt), bestk = int(selectBestK))
+                            validationInterval = int(selectValInt), bestk = int(selectBestK), mapBatchSize = selectMapBatchSize,
+                            mapLayers = selectMapLayers, mapDendrograms = selectMapDendrograms,
+                            displayWeights = selectDisplayWeights, displayBiases = selectDisplayBiases)
                 elif selectAction == "runmore":
                     network.runmore(epochs = int(selectEpochs), bestk = int(selectBestK))
             break
         waitForExit = input("\nPRESS ENTER TO GO BACK MENU..")
         self.state = "init"
 
-    def load_best_param_scenario(self):
+    def load_scenario_menu(self):
         os.system('cls' if os.name == 'nt' else 'clear')
         print(self.headerText)
         print("--- BEST PARAMETER SCENARIOS--- \n")
@@ -126,9 +123,9 @@ class GannManUi:
         exit = False
         while(not exit):
             if(self.state == 'init'): self.init_menu()
-            if(self.state == 'readScenario'): self.read_scenario_menu()
-            if(self.state == 'selectSavedScenario'): self.select_created_scenario()
-            if (self.state == 'loadBest'): self.load_best_param_scenario()
+            if(self.state == 'inputScenario'): self.read_scenario_menu()
+            if(self.state == 'runScenario'): self.run_scenario_menu()
+            if (self.state == 'loadScenario'): self.load_scenario_menu()
             if(self.state == "exit"):
                 exit = True
                 print("\nExiting program ..")

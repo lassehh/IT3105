@@ -9,7 +9,7 @@ class GannMan:
         self.ganns = []
 
     def create_gann(self, name, networkDimsString, hiddenActivationFunc, outputActivationFunc,
-                    lossFunc, optimizer, learningRate, weightInit, dataSource, dSourcePars, caseFrac, valFrac,
+                    lossFunc, optimizer, momentumFrac, learningRate, weightInit, dataSource, dSourcePars, caseFrac, valFrac,
                     testFrac, miniBatchSize):
 
         # Convert strings of numbers to list of ints
@@ -48,26 +48,28 @@ class GannMan:
         ann = Gann(name = name, netDims = networkDims, cMan = cMan, learningRate = float(learningRate),
                    mbs = int(miniBatchSize), hiddenActivationFunc = hiddenActivationFunc,
                    outputActivationFunc = outputActivationFunc, lossFunc = lossFunc,
-                   optimizer = optimizer, weightRange = weightInit)
+                   optimizer = optimizer, momentum = float(momentumFrac), weightRange = weightInit)
         #ann.run(epochs = 200, showInterval = 200, validationInterval = 10, bestk = 1)
         self.ganns.append(ann)
 
 
     def run_network(self, network, showInterval = 100, validationInterval = 100, epochs=100, sess=None,
                     mapBatchSize = '', displayWeights = '', displayBiases = '', continued=False,
-                    mapDendrograms = '', bestk=None):
+                    mapLayers = '', mapDendrograms = '', bestk=None):
         if mapBatchSize == '': mapBatchSize = 0
         else: mapBatchSize = int(mapBatchSize)
         if mapDendrograms == '': mapDendrograms = []
         else: mapDendrograms = [int(i) for i in mapDendrograms.split(" ")]
+        if mapLayers == '': mapLayers = []
+        else: mapLayers = [int(i) for i in mapLayers.split(" ")]
         if displayWeights == '': displayWeights = []
         else: displayWeights = [int(i) for i in displayWeights.split(" ")]
         if displayBiases == '': displayBiases = []
         else: displayBiases = [int(i) for i in displayBiases.split(" ")]
         network.run(epochs=epochs, showInterval=showInterval, validationInterval=validationInterval, bestk=bestk,
-                    )#displayBiases = displayBiases, displayWeights = displayWeights,
+                    displayWeights = displayWeights, displayBiases = displayBiases)#displayBiases = displayBiases, displayWeights = displayWeights,
                     #mapDendrograms = mapDendrograms, mapBatchSize = mapBatchSize)
-        exit = input("Press anything to continue ..")
+        network.run_mapping(mapBatchSize = mapBatchSize, mapDendrograms = mapDendrograms, mapLayers = mapLayers)
 
     def run_network_more(self, epochs, name):
         #TODO: do gann.runmore()
@@ -76,6 +78,7 @@ class GannMan:
     def load_best_param_networks(self, fileName):
         dataSource = fileName
         name = fileName + '_best'
+        momentumFrac = None
         with open('best_param_networks/' + fileName + '.txt', 'r') as f:
             for paramLine in f:
                 paramLine = paramLine.strip("\n")
@@ -87,6 +90,7 @@ class GannMan:
                 elif paramName == 'outputActivFunc': outputActivationfunc = paramLine[0]
                 elif paramName == 'lossFunc': lossFunc = paramLine[0]
                 elif paramName == 'optimizer': optimizer = paramLine[0]
+                elif paramName == 'momentumFrac': momentumFrac = paramLine[0]
                 elif paramName == 'learningRate': learningRate = paramLine[0]
                 elif paramName == 'weightInit': weightInit = paramLine[0]
                 elif paramName == 'dSourceParams': dSourceParams = paramLine[0]
@@ -97,7 +101,7 @@ class GannMan:
                 else:
                     raise AssertionError("Parameter: " + paramName + ", is not a valid parameter name.")
         self.create_gann(name, netDims, hiddenActivationFunc, outputActivationfunc,
-                    lossFunc, optimizer, learningRate, weightInit, fileName, dSourceParams, caseFrac, valFrac,
+                    lossFunc, optimizer, momentumFrac, learningRate, weightInit, dataSource, dSourceParams, caseFrac, valFrac,
                     testFrac, mbs)
 
 #man = GannMan()
