@@ -53,6 +53,7 @@ class Gann():
         # DATA STORAGE
         self.grabvarFigures = []                          # One matplotlib figure for each grabvar
         self.validationHistory = []
+        self.error_history = []
         self.modules = []
         self.build()
 
@@ -135,7 +136,10 @@ class Gann():
         self.trainer = optimizer.minimize(self.error, name='Backprop')
 
     def do_training(self, sess, cases, epochs=100, continued=False):
-        if not(continued): self.error_history = []
+        if not(continued):
+            self.error_history = []
+            self.validationHistory = []
+            self.globalTrainingStep = 0
         last_grabvals = []
         for i in range(epochs):
             error = 0
@@ -491,11 +495,11 @@ def countex(epochs=100, nbits=4, ncases=500, lrate=0.1, showint=500, mbs=10, cfr
                            #   title="training history", fig=True)
 
     # generate all possible input cases
-    #case_generator = (lambda: TFT.gen_vector_count_cases(mapBatchSize, nbits, random=False))
-    #ann.run_mapping(case_generator, mapBatchSize = mapBatchSize, mapLayers = [], mapDendrograms = [])
+    case_generator = (lambda: TFT.gen_vector_count_cases(mapBatchSize, nbits, random=False))
+    ann.run_mapping(case_generator, mapBatchSize = mapBatchSize, mapLayers = [], mapDendrograms = [])
 
     PLT.pause(10)
     return ann
 
 
-countex()
+#countex()
