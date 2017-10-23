@@ -449,7 +449,6 @@ def dendrogram(features,labels,metric='euclidean',mode='average',ax=None,title='
 # ***** GENERATING DATA SETS for MACHINE LEARNING *****
 
 # MNIST
-
 def gen_mnist_cases(data_dir = 'mnist', one_hot = True):
     mnist_data = mnist.read_data_sets(data_dir, one_hot=one_hot)
     (images, labels) = (mnist_data.train.images.tolist(), mnist_data.train.labels.tolist())
@@ -458,6 +457,43 @@ def gen_mnist_cases(data_dir = 'mnist', one_hot = True):
     # Images have been preprocessed by casting to float32 and normalizing the pixels to range [0,1]
     return dataset
 
+# UC Irvine datasets
+# filename can be 'winequality_red', 'glass' or 'yeast'
+def gen_uc_irvine_cases(filename):
+    with open('../UC_irvine/' + filename + '.txt', 'r') as f:
+        cases = []
+        for line in f:
+            line = line.strip("\n")
+            if filename == 'winequality_red':
+                currentLine = line.split(";")
+            else:
+                currentLine = line.split(",")
+            currentLine = [float(x) for x in currentLine]
+            target = int(currentLine[-1])
+            currentLine.pop(-1)
+            feature = currentLine
+            cases.append([feature, [target]])
 
-#cases = gen_mnist_cases()
+    return scale_features(cases)
+
+def scale_features(cases):
+
+    max_f = [0]*len(cases[0][0])
+    min_f = [float('Inf')]*len(cases[0][0])
+    for c in cases:
+        features = c[0]
+        for i, f in enumerate(features):
+            max_f[i] = f if f > max_f[i] else max_f[i]
+            min_f[i] = f if f < min_f[i] else min_f[i]
+
+    scaled_cases = []
+    for c in cases:
+        scaled_f = [(f - min_f[i])/(max_f[i] - min_f[i]) for i, f in enumerate(c[0])]
+        scaled_cases.append(scaled_f)
+    return scaled_cases
+
+
+#cases = gen_vector_count_cases(15, 4)
+
+#cases = gen_uc_irvine_cases('glass')
 #noobe = 0
