@@ -30,11 +30,11 @@ class GannMan:
         elif(dataSource == 'autoencoder'):
             case_generator = (lambda: TFT.gen_all_one_hot_cases(dSourcePars[0]))
         elif(dataSource == 'dense_autoencoder'):
-            case_generator = (lambda: TFT.gen_dense_autoencoder_cases(dSourcePars[0], dSourcePars[1], dr=(0.4, 0.7)))
+            case_generator = (lambda: TFT.gen_dense_autoencoder_cases(dSourcePars[0], dSourcePars[1], dr=(0.1, 0.9)))
         elif(dataSource == 'parity'):
             case_generator = (lambda: TFT.gen_all_parity_cases(dSourcePars[0]))
         elif(dataSource == 'segment'):
-            case_generator = (lambda: TFT.gen_segmented_vector_cases(size=25, count=1000, misegs=0, maxsegs=8))
+            case_generator = (lambda: TFT.gen_segmented_vector_cases(vectorlen=25, count=1000, minsegs=0, maxsegs=8))
         elif(dataSource == 'MNIST'):
             pass
         elif(dataSource == 'wine'):
@@ -60,7 +60,7 @@ class GannMan:
 
     def run_gann(self, showInterval = None, validationInterval = 100, epochs=100, sess=None,
                     mapBatchSize = '', displayWeights = '', displayBiases = '', continued=False,
-                    mapLayers = '', mapDendrograms = '', bestk=None):
+                    mapLayers = '', mapDendrograms = '', bestK=None):
         if mapBatchSize == '': mapBatchSize = 0
         else: mapBatchSize = int(mapBatchSize)
         if mapDendrograms == '': mapDendrograms = []
@@ -71,7 +71,9 @@ class GannMan:
         else: displayWeights = [int(i) for i in displayWeights.split(" ")]
         if displayBiases == '': displayBiases = []
         else: displayBiases = [int(i) for i in displayBiases.split(" ")]
-        self.gann.run(epochs=epochs, showInterval=showInterval, validationInterval=validationInterval, bestk=bestk,
+        if bestK == 'none': bestK = None
+        else: bestK = int(bestK)
+        self.gann.run(epochs=epochs, showInterval=showInterval, validationInterval=validationInterval, bestk=bestK,
                     displayWeights = displayWeights, displayBiases = displayBiases)#displayBiases = displayBiases, displayWeights = displayWeights,
                     #mapDendrograms = mapDendrograms, mapBatchSize = mapBatchSize)
         self.gann.run_mapping(mapBatchSize = mapBatchSize, mapDendrograms = mapDendrograms, mapLayers = mapLayers)
@@ -119,10 +121,11 @@ class GannMan:
                     testFrac, mbs)
 
         self.run_gann(epochs=int(epochs), showInterval=None,
-                                 validationInterval=int(valInt), bestk=int(bestK),
+                                 validationInterval=int(valInt), bestK=bestK,
                                  mapBatchSize=mapBatchSize,
                                  mapLayers=mapLayers, mapDendrograms=mapDendrograms,
                                  displayWeights=displayWeights, displayBiases=displayBiases)
 
 #man = GannMan()
-#man.load_best_param_networks(fileName='bitcounter')
+#man.do_gann_from_config(fileName='dense_autoencoder')
+

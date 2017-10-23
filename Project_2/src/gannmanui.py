@@ -77,9 +77,8 @@ class GannManUi:
                                  caseFrac, valFrac, testFrac, miniBatchSize)
 
         # Run: train and test the gann
-        if selectBestK == '': selectBestK = None
         self.gannMan.run_gann(epochs = int(selectEpochs), showInterval = None,
-                validationInterval = int(selectValInt), bestk = int(selectBestK), mapBatchSize = selectMapBatchSize,
+                validationInterval = int(selectValInt), bestk = selectBestK, mapBatchSize = selectMapBatchSize,
                 mapLayers = selectMapLayers, mapDendrograms = selectMapDendrograms, displayWeights = selectDisplayWeights,
                 displayBiases = selectDisplayBiases)
 
