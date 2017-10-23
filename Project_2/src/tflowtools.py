@@ -470,13 +470,48 @@ def gen_uc_irvine_cases(filename):
                 currentLine = line.split(",")
             currentLine = [float(x) for x in currentLine]
             target = int(currentLine[-1])
+            target = create_target_vector(filename, target)
             currentLine.pop(-1)
             feature = currentLine
             cases.append([feature, [target]])
     return scale_features(cases)
 
-def scale_features(cases):
 
+
+def gen_hackers_choice_cases(filename):
+    target_dict ={'L': 0,
+                  'B': 1,
+                  'R': 2}
+    with open('../UC_irvine/' + filename + '.txt', 'r') as f:
+        cases = []
+        for line in f:
+            line = line.strip("\n")
+            currentLine = line.split(",")
+            target = target_dict[currentLine[0]]
+            target = int_to_one_hot(target, 3)
+            currentLine.pop(0)
+            feature_vec = [int(x) for x in currentLine]
+            cases.append([feature_vec, target])
+    return cases
+
+
+def create_target_vector(filename, target):
+    if filename == 'winequality_red':
+        num_classes = 6
+        class_dict = {3: 0, 4: 1, 5: 2, 6: 3, 7: 4, 8: 5}
+        target = int_to_one_hot(class_dict[target], num_classes)
+    elif filename == 'glass':
+        num_classes = 6
+        class_dict = {1: 0, 2: 1, 3: 2, 5: 3, 6: 4, 7: 5}
+        target = int_to_one_hot(class_dict[target], num_classes)
+    elif filename == 'yeast':
+        num_classes = 10
+        class_dict = {1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: 8, 10: 9}
+        target = int_to_one_hot(class_dict[target], num_classes)
+    return target
+
+
+def scale_features(cases):
     max_f = [0]*len(cases[0][0])
     min_f = [float('Inf')]*len(cases[0][0])
     for c in cases:
@@ -491,5 +526,3 @@ def scale_features(cases):
         scaled_f = [(f - min_f[i])/(max_f[i] - min_f[i]) for i, f in enumerate(c[0])]
         scaled_cases.append([scaled_f, [target]])
     return scaled_cases
-
-
