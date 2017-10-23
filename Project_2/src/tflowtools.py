@@ -7,6 +7,7 @@ import os  # For starting up tensorboard from inside python
 import matplotlib.pyplot as PLT
 import scipy.cluster.hierarchy as SCH  # Needed for dendrograms
 import numpy.random as NPR
+from tensorflow.examples.tutorials.mnist import input_data
 
 # ****** SESSION HANDLING *******
 
@@ -305,6 +306,7 @@ def simple_plot(yvals,xvals=None,xtitle='X',ytitle='Y',title='Y = F(X)', label =
     PLT.xlabel(xtitle); PLT.ylabel(ytitle); PLT.title(title)
     PLT.legend()
     PLT.draw()
+    PLT.pause(.001)
 
 # Each history is a list of pairs (timestamp, value).
 def plot_training_history(error_hist,validation_hist=[],xtitle='Epoch',ytitle='Error',title='History',fig=True):
@@ -442,3 +444,18 @@ def dendrogram(features,labels,metric='euclidean',mode='average',ax=None,title='
     PLT.draw()
     PLT.pause(.1)
 
+
+
+# ***** GENERATING DATA SETS for MACHINE LEARNING *****
+
+# MNIST
+def gen_mnist_cases(data_fraction = 0.1, data_dir = 'mnist', one_hot = True):
+    mnist = input_data.read_data_sets(data_dir, one_hot=one_hot)
+    (images, labels) = (mnist.train.images.tolist(), mnist.train.labels.tolist())
+    dataset = [[fvec, target] for fvec, target in zip(images, labels)]
+
+    return dataset
+
+
+cases = gen_mnist_cases()
+noobe = 0
