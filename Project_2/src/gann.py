@@ -73,16 +73,16 @@ class Gann():
     def add_mapvars(self):
         for layer_index in self.mapLayers:
             if layer_index == (len(self.modules)): # the last output
-                if self.outputActivationFunc == 'softmax':
-                    self.mapVars.append(tf.nn.softmax(self.modules[layer_index - 1].getvar('out')))
-                else:
-                    self.mapVars.append(self.modules[layer_index - 1].getvar('out'))
+                self.mapVars.append(self.modules[layer_index - 1].getvar('out'))
             else:
                 self.mapVars.append(self.modules[layer_index].getvar('in'))
 
     def add_dendrogramvars(self):
         for layer_index in self.mapDendrograms:
-            self.dendrogramVars.append(self.modules[layer_index].getvar('out'))
+            if (layer_index == (len(self.modules) - 1)) and self.outputActivationFunc == 'softmax':
+                self.dendrogramVars.append(self.rawOutput)
+            else:
+                self.dendrogramVars.append(self.modules[layer_index].getvar('out'))
 
     def roundup_probes(self):
         self.probes = tf.summary.merge_all()
@@ -332,6 +332,10 @@ class Gann():
                 for (i, v) in enumerate(dendrovals):
                     TFT.dendrogram(v, labels, title = 'Dendrogram of ' + names[i])
 
+        while (not PLT.waitforbuttonpress()):
+            pass
+        PLT.close('all')
+
     # After a run is complete, runmore allows us to do additional training on the network, picking up where we
     # left off after the last call to run (or runmore).  Use of the "continued" parameter (along with
     # global_training_step) allows easy updating of the error graph to account for the additional run(s).
@@ -397,14 +401,14 @@ class Gannmodule():
         # Set activation function for the neurons in the module
         if(self.activationFunc == 'relu'):
             self.output = tf.nn.relu(tf.matmul(self.input, self.weights) + self.biases, name=moduleName+'-out')
-        if (self.activationFunc == 'elu'):
+        elif (self.activationFunc == 'elu'):
             self.output = tf.nn.elu(tf.matmul(self.input, self.weights) + self.biases, name=moduleName + '-out')
         elif(self.activationFunc == 'sigmoid'):
             self.output = tf.nn.sigmoid(tf.matmul(self.input, self.weights) + self.biases, name=moduleName + '-out')
         elif(self.activationFunc == 'tanh'):
             self.output = tf.nn.tanh(tf.matmul(self.input, self.weights) + self.biases, name=moduleName + '-out')
         elif(self.activationFunc == 'softmax'):
-            self.ann.rawOutput = tf.matmul(self.input, self.weights) + self.biases
+            self.ann.rawOutput = tf.add(tf.matmul(self.input, self.weights), self.biases, name = moduleName + '-raw-out')
             self.output = tf.nn.softmax(tf.matmul(self.input, self.weights) + self.biases, name=moduleName + '-out')
         else:
             raise AssertionError('Unknown activation function ' + self.activationFunc + '.')
@@ -502,9 +506,9 @@ def countex(epochs=100, nbits=4, ncases=500, lrate=0.1, showint=500, mbs=10, cfr
 
     # generate all possible input cases
     case_generator = (lambda: TFT.gen_vector_count_cases(mapBatchSize, nbits, random=False))
-    ann.run_mapping(case_generator, mapBatchSize = mapBatchSize, mapLayers = [], mapDendrograms = [])
+    ann.run_mapping(case_generator, mapBatchSize = mapBatchSize, mapLayers = [0], mapDendrograms = [2])
 
-    PLT.pause(10)
+
     return ann
 
 
