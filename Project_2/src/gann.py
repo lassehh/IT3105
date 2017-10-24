@@ -330,7 +330,7 @@ class Gann():
             if len(self.mapDendrograms) > 0:
                 names = [x.name for x in self.dendrogramVars]
                 labels = [TFT.bits_to_str(s[0]) for s in cases]
-                #labels = [str(np.argmax(c[1])) for c in cases]
+                #labels = [TFT.one_hot_to_int(c[1]) for c in cases]
                 for (i, v) in enumerate(dendrovals):
                     TFT.dendrogram(v, labels, title = 'Dendrogram of ' + names[i])
 
