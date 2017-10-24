@@ -1,15 +1,15 @@
 #RUN PARAMETERS
-epochs,700
+epochs,500
 valInt,35
 bestK,1
 mapBatchSize,6
-mapLayers,3
+mapLayers,1,3
 mapDendrograms,2
 displayWeights,
 displayBiases,
 
 #CREATION PARAMETERS
-netDims,25 60 60 9
+netDims,25 50 9
 dSourceParams,
 hiddenActivFunc,relu
 outputActivFunc,softmax
@@ -21,4 +21,4 @@ weightInit,-0.1 0.1
 caseFrac,1
 valFrac,0.1
 testFrac,0.1
-mbs,20
+mbs,10

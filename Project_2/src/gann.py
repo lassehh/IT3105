@@ -96,16 +96,13 @@ class Gann():
         invar = self.input; insize = num_inputs
         # Build all modules and connect them
         for i,outsize in enumerate(self.networkDims[1:]):
+            if i == (len(self.networkDims)-2):
+                gmod = Gannmodule(self, i, invar, insize, outsize, self.outputActivationFunc, initWeightRange=self.weightInit)
+                self.output = gmod.output
+                continue
             gmod = Gannmodule(self, i, invar, insize, outsize, self.hiddenActivationFunc, initWeightRange = self.weightInit)
             invar = gmod.output
             insize = gmod.outsize
-        self.rawOutput = gmod.output # Output of last module is output of whole network
-        if self.outputActivationFunc == 'softmax':
-            self.output = tf.nn.softmax(self.rawOutput)
-        elif self.outputActivationFunc == 'none':
-            self.output = self.rawOutput
-        else:
-            raise AssertionError(self.outputActivationFunc + " is not a valid network output activation function.")
         self.target = tf.placeholder(tf.float64, shape=(None,gmod.outsize), name='Target')
         self.configure_learning()
 
@@ -129,6 +126,10 @@ class Gann():
         # Defining the training operator
         if self.optimizer == 'gradient_descent':
             optimizer = tf.train.GradientDescentOptimizer(self.learningRate)
+        elif self.optimizer == "adam":
+            optimizer = tf.train.AdamOptimizer(self.learningRate)
+        elif self.optimizer == "adagrad":
+            optimizer = tf.train.AdagradOptimizer(self.learningRate)
         elif self.optimizer == 'momentum':
             optimizer = tf.train.MomentumOptimizer(self.learningRate, momentum = self.momentum, use_nesterov = True)
         else:
@@ -396,10 +397,15 @@ class Gannmodule():
         # Set activation function for the neurons in the module
         if(self.activationFunc == 'relu'):
             self.output = tf.nn.relu(tf.matmul(self.input, self.weights) + self.biases, name=moduleName+'-out')
+        if (self.activationFunc == 'elu'):
+            self.output = tf.nn.elu(tf.matmul(self.input, self.weights) + self.biases, name=moduleName + '-out')
         elif(self.activationFunc == 'sigmoid'):
             self.output = tf.nn.sigmoid(tf.matmul(self.input, self.weights) + self.biases, name=moduleName + '-out')
-        elif (self.activationFunc == 'tanh'):
+        elif(self.activationFunc == 'tanh'):
             self.output = tf.nn.tanh(tf.matmul(self.input, self.weights) + self.biases, name=moduleName + '-out')
+        elif(self.activationFunc == 'softmax'):
+            self.ann.rawOutput = tf.matmul(self.input, self.weights) + self.biases
+            self.output = tf.nn.softmax(tf.matmul(self.input, self.weights) + self.biases, name=moduleName + '-out')
         else:
             raise AssertionError('Unknown activation function ' + self.activationFunc + '.')
 

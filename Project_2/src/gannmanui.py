@@ -100,6 +100,10 @@ class GannManUi:
         selectDataSource = input("\nSelect data source: ")
         self.gannMan.do_gann_from_config(selectDataSource)
 
+        # When finished, reset the gann man
+        del self.gannMan
+        self.gannMan = GannMan()
+
         waitForExit = input("\n[Press enter to return to the main menu..]")
         self.state = "options"
 
