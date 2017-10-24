@@ -12,7 +12,7 @@ class Gann():
     grabVarPlotType = 'hinton' # 'hinton' or 'matrix'
 
     def __init__(self, name, netDims, cMan, hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax',
-                 lossFunc = 'MSE', optimizer = 'gradient_descent', learningRate = 0.1, momentum = 0.1, weightRange = (-1,1), weightInitType = 'normalized',
+                 lossFunc = 'MSE', optimizer = 'gradient_descent', optimizerParams = None, learningRate = 0.1, momentum = 0.1, weightRange = (-1,1), weightInitType = 'normalized',
                  mbs = 10):
 
         # SCENARIO PARAMETERS
@@ -21,6 +21,7 @@ class Gann():
         self.outputActivationFunc = outputActivationFunc  # Activation function for the output of the network
         self.lossFunc = lossFunc                          # Quantity to minimize during training
         self.optimizer = optimizer                        # Optimizer used in learning to minimize the loss. 'gradient_descent' or 'momentum'
+        self.optimizerParams = optimizerParams
         self.learningRate = learningRate                  # How large steps to take in the direction of the gradient
         self.momentum = momentum                          # The momentum, only relevant when self.optimizer = 'momentum'
         self.weightInit = weightRange                     # Upper and lower band for random initialization of weights
@@ -129,11 +130,11 @@ class Gann():
         if self.optimizer == 'gradient_descent':
             optimizer = tf.train.GradientDescentOptimizer(self.learningRate)
         elif self.optimizer == "adam":
-            optimizer = tf.train.AdamOptimizer(self.learningRate)
+            optimizer = tf.train.AdamOptimizer(self.learningRate, epsilon = self.optimizerParams[0])
         elif self.optimizer == "adagrad":
             optimizer = tf.train.AdagradOptimizer(self.learningRate)
         elif self.optimizer == 'momentum':
-            optimizer = tf.train.MomentumOptimizer(self.learningRate, momentum = self.momentum, use_nesterov = True)
+            optimizer = tf.train.MomentumOptimizer(self.learningRate, momentum = self.optimizerParams[0], use_nesterov = True)
         else:
             raise AssertionError("Unknown optimizer: " + self.optimizer)
         self.trainer = optimizer.minimize(self.error, name='Backprop')

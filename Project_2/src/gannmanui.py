@@ -49,10 +49,10 @@ class GannManUi:
         outputActivationFunc = input("Output activation function (softmax, none): ")
         lossFunc = input("Loss function (MSE, softmax_cross_entropy, sigmoid_cross_entropy): ")
         optimizer = input("Optimizer (gradient_descent or momentum): ")
-        if optimizer == "momentum":
-            momentumFrac= input("Amount of momentum <0,1>: ")
+        if optimizer == 'adam' or optimizer == "adagrad" or optimizer == 'momentum':
+            optimizerParams = input("Optmizer params (epsilon):")
         else:
-            momentumFrac = None
+            optimizerParams = None
         learningRate = input("Learning rate <0, 1>: ")
         weightInitType = input("Weight initializing method: ")
         if weightInitType == 'uniform':
@@ -77,7 +77,7 @@ class GannManUi:
 
         # Create the gann object
         self.gannMan.create_gann(name, networkDims, hiddenActivationFunc, outputActivationFunc,
-                                 lossFunc, optimizer, momentumFrac, learningRate, weightInitType, weightInit, dataSource, dataSourceParas,
+                                 lossFunc, optimizer, optimizerParams, learningRate, weightInitType, weightInit, dataSource, dataSourceParas,
                                  caseFrac, valFrac, testFrac, miniBatchSize)
 
         # Run: train and test the gann

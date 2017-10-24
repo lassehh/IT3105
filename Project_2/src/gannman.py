@@ -12,7 +12,7 @@ class GannMan:
         pass
 
     def create_gann(self, name, networkDimsString, hiddenActivationFunc, outputActivationFunc,
-                    lossFunc, optimizer, momentumFrac, learningRate, weightInitType, weightInit, dataSource, dSourcePars, caseFrac, valFrac,
+                    lossFunc, optimizer, optimizerParams,learningRate, weightInitType, weightInit, dataSource, dSourcePars, caseFrac, valFrac,
                     testFrac, miniBatchSize):
 
         # Convert strings of numbers to list of ints
@@ -21,8 +21,8 @@ class GannMan:
         networkDims = [int(i) for i in networkDimsString.split(" ")]
         if dSourcePars == '': dSourcePars = []
         else: dSourcePars = [int(i) for i in dSourcePars.split(" ")]
-        if momentumFrac == None: pass
-        else: momentumFrac = float(momentumFrac)
+        if optimizerParams == '': optimizerParams = []
+        else: optimizerParams = [float(i) for i in optimizerParams.split(" ")]
 
         # Generate cases for the data source
         case_generator = None
@@ -55,7 +55,7 @@ class GannMan:
         ann = Gann(name = name, netDims = networkDims, cMan = cMan, learningRate = float(learningRate),
                    mbs = int(miniBatchSize), hiddenActivationFunc = hiddenActivationFunc,
                    outputActivationFunc = outputActivationFunc, lossFunc = lossFunc,
-                   optimizer = optimizer, momentum = momentumFrac, weightInitType = weightInitType, weightRange = weightInit)
+                   optimizer = optimizer, optimizerParams = optimizerParams, weightInitType = weightInitType, weightRange = weightInit)
         #ann.run(epochs = 200, showInterval = 200, validationInterval = 10, bestk = 1)
         self.gann = ann
 
@@ -108,7 +108,7 @@ class GannMan:
                     elif paramName == 'outputActivFunc': outputActivationfunc = paramLine[0]
                     elif paramName == 'lossFunc': lossFunc = paramLine[0]
                     elif paramName == 'optimizer': optimizer = paramLine[0]
-                    elif paramName == 'momentumFrac': momentumFrac = paramLine[0]
+                    elif paramName == 'optimizerParams': optimizerParams = paramLine[0]
                     elif paramName == 'learningRate': learningRate = paramLine[0]
                     elif paramName == 'weightInitType': weightInitType = paramLine[0]
                     elif paramName == 'weightInit': weightInit = paramLine[0]
@@ -120,7 +120,7 @@ class GannMan:
                     else:
                         raise AssertionError("Parameter: " + paramName + ", is not a valid parameter name.")
         self.create_gann(name, netDims, hiddenActivationFunc, outputActivationfunc,
-                    lossFunc, optimizer, momentumFrac, learningRate, weightInitType, weightInit, dataSource, dSourceParams, caseFrac, valFrac,
+                    lossFunc, optimizer, optimizerParams, learningRate, weightInitType, weightInit, dataSource, dSourceParams, caseFrac, valFrac,
                     testFrac, mbs)
 
         self.run_gann(epochs=int(epochs), showInterval=None,
