@@ -34,7 +34,8 @@ class GannMan:
         elif(dataSource == 'parity'):
             case_generator = (lambda: TFT.gen_all_parity_cases(dSourcePars[0]))
         elif(dataSource == 'segment'):
-            case_generator = (lambda: TFT.gen_segmented_vector_cases(vectorlen=25, count=1000, minsegs=0, maxsegs=8))
+            case_generator = (lambda: TFT.gen_segmented_vector_cases(vectorlen = dSourcePars[0], count = dSourcePars[1],
+                                                                     minsegs = dSourcePars[2], maxsegs = dSourcePars[3]))
         elif(dataSource == 'MNIST'):
             pass
         elif(dataSource == 'wine'):
