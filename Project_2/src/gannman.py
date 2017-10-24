@@ -45,7 +45,7 @@ class GannMan:
         elif(dataSource == 'yeast'):
             case_generator = (lambda: TFT.gen_uc_irvine_cases('yeast'))
         elif(dataSource == 'hackers'):
-            case_generator = (lambda: TFT.gen_uc_irvine_cases('balance-scale'))
+            case_generator = (lambda: TFT.gen_hackers_choice_cases('balance-scale'))
         else:
             raise NotImplementedError("Datasource: " + dataSource + " is not implemented")
 
