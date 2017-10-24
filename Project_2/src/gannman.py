@@ -12,11 +12,12 @@ class GannMan:
         pass
 
     def create_gann(self, name, networkDimsString, hiddenActivationFunc, outputActivationFunc,
-                    lossFunc, optimizer, momentumFrac, learningRate, weightInit, dataSource, dSourcePars, caseFrac, valFrac,
+                    lossFunc, optimizer, momentumFrac, learningRate, weightInitType, weightInit, dataSource, dSourcePars, caseFrac, valFrac,
                     testFrac, miniBatchSize):
 
         # Convert strings of numbers to list of ints
-        if weightInit != "scaled": weightInit = [float(i) for i in weightInit.split(" ")]
+        if weightInitType == "uniform": weightInit = [float(i) for i in weightInit.split(" ")]
+        else: weightInit = (0,0)
         networkDims = [int(i) for i in networkDimsString.split(" ")]
         if dSourcePars == '': dSourcePars = []
         else: dSourcePars = [int(i) for i in dSourcePars.split(" ")]
@@ -36,15 +37,15 @@ class GannMan:
         elif(dataSource == 'segment'):
             case_generator = (lambda: TFT.gen_segmented_vector_cases(vectorlen=25, count=1000, minsegs=0, maxsegs=8))
         elif(dataSource == 'MNIST'):
-            pass
+            case_generator = (lambda: TFT.gen_mnist_cases())
         elif(dataSource == 'wine'):
-            pass
+            case_generator = (lambda: TFT.gen_uc_irvine_cases('winequality_red'))
         elif(dataSource == 'glass'):
-            pass
+            case_generator = (lambda: TFT.gen_uc_irvine_cases('glass'))
         elif(dataSource == 'yeast'):
-            pass
+            case_generator = (lambda: TFT.gen_uc_irvine_cases('yeast'))
         elif(dataSource == 'hackers'):
-            pass
+            case_generator = (lambda: TFT.gen_uc_irvine_cases('balance-scale'))
         else:
             raise NotImplementedError("Datasource: " + dataSource + " is not implemented")
 
@@ -53,7 +54,7 @@ class GannMan:
         ann = Gann(name = name, netDims = networkDims, cMan = cMan, learningRate = float(learningRate),
                    mbs = int(miniBatchSize), hiddenActivationFunc = hiddenActivationFunc,
                    outputActivationFunc = outputActivationFunc, lossFunc = lossFunc,
-                   optimizer = optimizer, momentum = momentumFrac, weightRange = weightInit)
+                   optimizer = optimizer, momentum = momentumFrac, weightInitType = weightInitType, weightRange = weightInit)
         #ann.run(epochs = 200, showInterval = 200, validationInterval = 10, bestk = 1)
         self.gann = ann
 
@@ -108,6 +109,7 @@ class GannMan:
                     elif paramName == 'optimizer': optimizer = paramLine[0]
                     elif paramName == 'momentumFrac': momentumFrac = paramLine[0]
                     elif paramName == 'learningRate': learningRate = paramLine[0]
+                    elif paramName == 'weightInitType': weightInitType = paramLine[0]
                     elif paramName == 'weightInit': weightInit = paramLine[0]
                     elif paramName == 'dSourceParams': dSourceParams = paramLine[0]
                     elif paramName == 'caseFrac': caseFrac = paramLine[0]
@@ -117,7 +119,7 @@ class GannMan:
                     else:
                         raise AssertionError("Parameter: " + paramName + ", is not a valid parameter name.")
         self.create_gann(name, netDims, hiddenActivationFunc, outputActivationfunc,
-                    lossFunc, optimizer, momentumFrac, learningRate, weightInit, dataSource, dSourceParams, caseFrac, valFrac,
+                    lossFunc, optimizer, momentumFrac, learningRate, weightInitType, weightInit, dataSource, dSourceParams, caseFrac, valFrac,
                     testFrac, mbs)
 
         self.run_gann(epochs=int(epochs), showInterval=None,

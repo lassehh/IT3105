@@ -3,6 +3,7 @@ import numpy as np
 import math
 import matplotlib.pyplot as PLT
 import tflowtools as TFT
+import math
 
 """ This is the GANN from tutor3.py, but improved/modified for this project. """
 
@@ -11,7 +12,7 @@ class Gann():
     grabVarPlotType = 'hinton' # 'hinton' or 'matrix'
 
     def __init__(self, name, netDims, cMan, hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax',
-                 lossFunc = 'MSE', optimizer = 'gradient_descent', learningRate = 0.1, momentum = 0.1, weightRange = (-1,1),
+                 lossFunc = 'MSE', optimizer = 'gradient_descent', learningRate = 0.1, momentum = 0.1, weightRange = (-1,1), weightInitType = 'normalized',
                  mbs = 10):
 
         # SCENARIO PARAMETERS
@@ -23,6 +24,7 @@ class Gann():
         self.learningRate = learningRate                  # How large steps to take in the direction of the gradient
         self.momentum = momentum                          # The momentum, only relevant when self.optimizer = 'momentum'
         self.weightInit = weightRange                     # Upper and lower band for random initialization of weights
+        self.weightInitType = weightInitType
         self.caseMan = cMan                               # Case manager object with a data source
         self.miniBatchSize = mbs                          # Amount of cases in each batch which are used for each run
         self.grabVars = []                                # Variables (weights and/or biases) to be monitored (by gann code) during a run.
@@ -391,11 +393,16 @@ class Gannmodule():
         self.build()
 
     def build(self):
-        moduleName = self.name; n = self.outsize
-        (lower_w, upper_w) = self.initialWeightRange
-        self.weights = tf.Variable(np.random.uniform(lower_w, upper_w, size=(self.insize,n)),
+        moduleName = self.name
+        n = self.outsize
+        if self.ann.weightInitType == 'normalized':
+            self.weights = tf.Variable(np.random.randn(self.insize,n)*math.sqrt(2.0/self.insize), name=moduleName+'-wgt', trainable=True)
+
+        elif self.ann.weightInitType == 'uniform':
+            (lower_w, upper_w) = self.initialWeightRange
+            self.weights = tf.Variable(np.random.uniform(lower_w, upper_w, size=(self.insize,n)),
                                    name=moduleName+'-wgt', trainable=True) # True = default for trainable anyway
-        self.biases = tf.Variable(np.random.uniform(lower_w, upper_w, size=n),
+        self.biases = tf.Variable(np.random.uniform(-0.01, 0.01, size=n),
                                   name=moduleName+'-bias', trainable=True)  # First bias vector
 
         # Set activation function for the neurons in the module

@@ -54,7 +54,11 @@ class GannManUi:
         else:
             momentumFrac = None
         learningRate = input("Learning rate <0, 1>: ")
-        weightInit = input("Initial weight range (or scaled): ")
+        weightInitType = input("Weight initializing method: ")
+        if weightInitType == 'uniform':
+            weightInit = input("Initial weight range (or scaled): ")
+        else:
+            weightInit = None
         dataSource = input("Data source (bitcounter, autoencoder, MNIST...): ")
         dataSourceParas = input("Data source parameters (Ex: nbits for bit-counter): ")
         caseFrac = input("Case fraction: ")
@@ -73,7 +77,7 @@ class GannManUi:
 
         # Create the gann object
         self.gannMan.create_gann(name, networkDims, hiddenActivationFunc, outputActivationFunc,
-                                 lossFunc, optimizer, momentumFrac, learningRate, weightInit, dataSource, dataSourceParas,
+                                 lossFunc, optimizer, momentumFrac, learningRate, weightInitType, weightInit, dataSource, dataSourceParas,
                                  caseFrac, valFrac, testFrac, miniBatchSize)
 
         # Run: train and test the gann
