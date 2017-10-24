@@ -473,7 +473,7 @@ def gen_uc_irvine_cases(filename):
             target = create_target_vector(filename, target)
             currentLine.pop(-1)
             feature = currentLine
-            cases.append([feature, [target]])
+            cases.append([feature, target])
     return scale_features(cases)
 
 
@@ -524,5 +524,6 @@ def scale_features(cases):
     for c in cases:
         target = c[1]
         scaled_f = [(f - min_f[i])/(max_f[i] - min_f[i]) for i, f in enumerate(c[0])]
-        scaled_cases.append([scaled_f, [target]])
+        scaled_cases.append([scaled_f, target])
     return scaled_cases
+
