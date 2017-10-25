@@ -1,19 +1,19 @@
 #TEMPLATE FOR A SCENARIO CONFIG FILE
-#(ALL PARAMETERS MUST BE FILLED IN)
+#PARAMETERS MAY BE LEFT EMPTY
 
 #RUN PARAMETERS
 epochs,
 valInt,
 bestK,
-mapBatchSize
-mapLayers
-mapDendrograms
-displayWeights
-displayBiases
+mapBatchSize,
+mapLayers,
+mapDendrograms,
+displayWeights,
+displayBiases,
 
 #CREATION PARAMETERS
 netDims,
-dataSource,parity
+dataSource,
 dSourceParams,
 hiddenActivFunc,
 outputActivFunc,

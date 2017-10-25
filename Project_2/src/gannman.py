@@ -42,7 +42,8 @@ class GannMan:
         elif(dataSource == 'autoencoder'):
             case_generator = (lambda: TFT.gen_all_one_hot_cases(dSourcePars[0]))
         elif(dataSource == 'dense_autoencoder'):
-            case_generator = (lambda: TFT.gen_dense_autoencoder_cases(count = dSourcePars[0], size = dSourcePars[1], dr=(0.4    , 0.7)))
+            case_generator = (lambda: TFT.gen_dense_autoencoder_cases(count = dSourcePars[0], size = dSourcePars[1],
+                                                                      dr=(dSourcePars[2], dSourcePars[3])))
         elif(dataSource == 'parity'):
             case_generator = (lambda: TFT.gen_all_parity_cases(dSourcePars[0]))
         elif(dataSource == 'segment'):

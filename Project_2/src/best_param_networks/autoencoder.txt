@@ -1,28 +1,28 @@
 #RUN PARAMETERS
-epochs,500
+epochs,1200
 valInt,20
 bestK,1
 mapBatchSize,8
 # for activ. maps index 0 is the input
-mapLayers,0 2
-# for dendrograms index 0 is first hidden laye
-mapDendrograms,1
+mapLayers,0 1
+# for dendrograms index 0 is the first hidden layer
+mapDendrograms,
 displayWeights,
 displayBiases,
 
 #CREATION PARAMETERS
-netDims,8 16 8
+netDims,8 8
 dataSource,autoencoder
 dSourceParams,8
 hiddenActivFunc,relu
 outputActivFunc,none
 lossFunc,softmax_cross_entropy
 optimizer,adam
-optimizerParams,0.9 0.999 0.001
+optimizerParams,0.9 0.999 0.0001
 learningRate,0.001
 weightInitType,normalized
 weightInit,-0.1 0.1
 caseFrac,1
-valFrac,0
-testFrac,0
+valFrac,0.1
+testFrac,0.1
 mbs,1
