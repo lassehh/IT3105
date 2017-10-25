@@ -29,8 +29,8 @@ class Gann():
         self.caseMan = cMan                               # Case manager object with a data source
         self.miniBatchSize = mbs                          # Amount of cases in each batch which are used for each run
         self.grabVars = []                                # Variables (weights and/or biases) to be monitored (by gann code) during a run.
-        self.mapVars = []
-        self.dendrogramVars = []
+        self.mapVars = []                                 # Variables (input/hidden/output layer activations) to be visualized in a map test
+        self.dendrogramVars = []                          # Variables (hidden/output layers) to be plotten in a dendrogram
 
         # Grabbed variables ( defined in the call to run() )
         self.displayWeights = []                          # List of the weight arrays(their hidden layer indices) to be visualized at the end of the run. 0 is the first hidden layer
@@ -54,7 +54,6 @@ class Gann():
 
 
         # DATA STORAGE
-        self.grabvarFigures = []                          # One matplotlib figure for each grabvar
         self.validationHistory = []
         self.error_history = []
         self.modules = []
@@ -175,7 +174,7 @@ class Gann():
         accuracy, _, _ = self.run_one_step(grabbed_vars = self.grabVars, probed_vars = self.probes,
                                            operators = testFunc, session = sess,
                                            feed_dict = feeder, showInterval = 0)
-        loss, grabvals, _ = self.run_one_step(grabbed_vars=self.grabVars, probed_vars=self.probes,
+        loss, _, _ = self.run_one_step(grabbed_vars=self.grabVars, probed_vars=self.probes,
                                               operators=self.error, session=sess,
                                               feed_dict=feeder, showInterval=0)
         accuracy = 100 * (accuracy / len(cases))
@@ -183,7 +182,7 @@ class Gann():
             print('Epoch: %s\t\t %s loss: N/A\t\t %s : %s %%' % (epoch, msg, msg, accuracy))
         else:
             print('Epoch: %s\t\t %s loss: %5.4f\t\t %s accuracy: %d %%' % (epoch, msg, loss, msg, accuracy))
-        return loss, grabvals  # self.error uses MSE, so this is a per-case value when bestk=None
+        return loss  # self.error uses MSE, so this is a per-case value when bestk=None
 
 
     def do_mapping(self, session, cases):
@@ -192,12 +191,13 @@ class Gann():
         feeder = {self.input: inputs, self.target: targets}
         testFunc = self.gen_match_counter(self.output, [TFT.one_hot_to_int(list(v)) for v in targets], k=1)
 
-        _, vals, _ = self.run_one_step(grabbed_vars = [self.mapVars]+ [self.dendrogramVars], probed_vars = self.probes,
+        _, vals, _ = self.run_one_step(grabbed_vars = [self.mapVars] + [self.dendrogramVars] + [self.grabVars], probed_vars = self.probes,
                                            operators = testFunc, session = session,
                                            feed_dict = feeder, showInterval = 0)
         mapped_vals = vals[0]
         dendrogram_vals = vals[1]
-        return mapped_vals, dendrogram_vals
+        grabbed_vals = vals[2]
+        return mapped_vals, dendrogram_vals, grabbed_vals
 
 
     def gen_match_counter(self, logits, labels, k = 1):
@@ -213,15 +213,13 @@ class Gann():
     def testing_session(self, sess, bestk=None):
         cases = self.caseMan.get_testing_cases()
         if len(cases) > 0:
-            _, grabvals = self.do_testing(sess, cases, msg='Final testing', bestk=bestk)
-            if len(grabvals) > 0:
-                self.display_grabvars(grabvals, self.grabVars, step = self.globalTrainingStep)
+            self.do_testing(sess, cases, msg='Final testing', bestk=bestk)
 
     def consider_validation_testing(self, epoch, sess):
         if self.validationInterval and (epoch % self.validationInterval == 0):
             cases = self.caseMan.get_validation_cases()
             if len(cases) > 0:
-                error, _ = self.do_testing(sess, cases = cases, epoch = epoch, msg='Validation')
+                error = self.do_testing(sess, cases = cases, epoch = epoch, msg='Validation')
                 self.validationHistory.append((epoch, error))
 
     # Do testing (i.e. calc error without learning) on the training set.
@@ -238,10 +236,7 @@ class Gann():
             sess.probe_stream.add_summary(results[2], global_step = step)
         else:
             results = sess.run([operators, grabbed_vars], feed_dict = feed_dict)
-        if showInterval and (step % showInterval == 0):
-            pass
-            #self.display_grabvars(results[1], grabbed_vars, step=step)
-            #self.display_loss_and_error()
+
         return results[0], results[1], sess
 
     def display_loss_and_error(self):
@@ -257,10 +252,7 @@ class Gann():
             elif type(v) == np.ndarray and len(v.shape) == 1: # if v is a vector (i.e. a bias vector)
                 v = np.array([v]) # convert to matrix
 
-            if self.grabVarPlotType == 'hinton':
-                TFT.hinton_plot(v, fig=None, title='Hinton plot of ' + names[i] + ' at step ' + str(step))
-            else: #( self.grabVarPlotType == 'matrix' )
-                TFT.display_matrix(v, fig=self.grabvarFigures[fig_index], title='Matrix of ' + names[i] + ' at step ' + str(step))
+            TFT.hinton_plot(v, fig=None, title='Hinton plot of ' + names[i] + ' at step ' + str(step))
             fig_index += 1
 
     def run(self, showInterval = 100, validationInterval = 100, displayWeights = [], displayBiases = [],
@@ -268,15 +260,8 @@ class Gann():
         self.showInterval = showInterval                        # Frequency of showing grabbed variables
         self.validationInterval = validationInterval
 
-        self.grabVarPlotType = plot_type      # 'hinton' or 'matrix'
-
         self.displayWeights = displayWeights  # List of the weight arrays(their hidden layer indices) to be visualized at the end of the run
         self.displayBiases = displayBiases  # List of the bias vectors(their hidden layer indices) to be visualized at the end of the run
-        # Add all grabbed variables
-        for weight in self.displayWeights:
-            self.add_grabvar(weight, 'wgt')
-        for bias in self.displayBiases:
-            self.add_grabvar(bias, 'bias')
 
         #PLT.ion()
         self.training_session(epochs, sess = sess, continued = continued)
@@ -298,7 +283,13 @@ class Gann():
             # Add the monitored variables
             self.add_mapvars()
             self.add_dendrogramvars()
-            mapvals, dendrovals = self.do_mapping(session = self.current_session, cases = cases)
+            # Add all grabbed variables
+            for weight in self.displayWeights:
+                self.add_grabvar(weight, 'wgt')
+            for bias in self.displayBiases:
+                self.add_grabvar(bias, 'bias')
+
+            mapvals, dendrovals, grabvals = self.do_mapping(session = self.current_session, cases = cases)
 
             # Plotting
             names = [x.name for x in self.mapVars]
@@ -313,7 +304,8 @@ class Gann():
                     labels = [TFT.one_hot_to_int(c[1]) for c in cases]
                 for (i, v) in enumerate(dendrovals):
                     TFT.dendrogram(v, labels, title = 'Dendrogram of ' + names[i])
-
+            if len(grabvals) > 0:
+                self.display_grabvars(grabvals, self.grabVars, step = self.globalTrainingStep)
         while (not PLT.waitforbuttonpress()):
             pass
         PLT.close('all')
