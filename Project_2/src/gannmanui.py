@@ -13,7 +13,7 @@ Dependencies: gannman
 """
 class GannManUi:
     state = None                                                                        # Which menu/submenu the program is currently running
-    gannMan =                                                                           # A gann manager that manages the user inputs
+    gannMan = None                                                                      # A gann manager that manages the user inputs
     stateDict = {0: 'inputRunScenario', 1: 'loadRunScenario', 2: 'exit'}                # Submenus
     menuIndexPointer = 0                                                                # The graphical pointer index
 
