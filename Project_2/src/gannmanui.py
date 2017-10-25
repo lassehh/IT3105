@@ -1,22 +1,51 @@
 import os
 import glob
-from gannman import *
 import time
 from msvcrt import getwch
+from gannman import *
 
+"""
+Class: GannManUi
+A simple user-interface for running different architectures of neural networks that lets the user
+specify all relevant scenario parameters.
+
+Dependencies: gannman
+"""
 class GannManUi:
-    state = None
-    gannMan = None
+    state = None                                                                        # Which menu/submenu the program is currently running
+    gannMan =                                                                           # A gann manager that manages the user inputs
+    stateDict = {0: 'inputRunScenario', 1: 'loadRunScenario', 2: 'exit'}                # Submenus
+    menuIndexPointer = 0                                                                # The graphical pointer index
+
+    # Text/graphical stuff
     pointer = '>>'
-    menuIndexPointer = 0
     headerText = '### GANN MANAGER UI - PROJECT 2 DEMO ###\n'
-    stateDict = {0: 'inputRunScenario', 1: 'loadRunScenario', 2: 'exit'}
     initMenuOptions = { 0: 'INPUT & RUN scenario', 1: 'LOAD & RUN scenario', 2: 'Exit program.'}
 
     def __init__(self, state = 'options'):
         self.state = state
         self.gannMan = GannMan()
 
+    # Description: Launches the menu and it's state machine.
+    # Input: None
+    # Output: None
+    def start_ui(self):
+        os.system('cls' if os.name == 'nt' else 'clear')
+        exit = False
+        while(not exit):
+            if(self.state == 'options'): self.options_menu()
+            if(self.state == 'inputRunScenario'): self.input_run_scenario_menu()
+            if(self.state == 'loadRunScenario'): self.load_run_scenario_menu()
+            if(self.state == "exit"):
+                exit = True
+                print("\nExiting program..")
+                time.sleep(0.6)
+
+    # Description: Enters the main menu of the program where one can select by using the w and s keys on the keyboard to
+    #           navigate, and enter to select an option. There are currently two options: input a scenario/architecture
+    #           directly to the interface or by choosing a config file which stores all the parameters.
+    # Input: None
+    # Output: None
     def options_menu(self):
         optionSelected = False
         menuLength = len(self.initMenuOptions)
@@ -37,7 +66,10 @@ class GannManUi:
                 self.state = self.stateDict[self.menuIndexPointer]
             time.sleep(0.01)
 
-
+    # Description: Starts a menu which lets the user input the full specification of a scenario/architecture,
+    #           then passses this information to the gann manager which runs the scenario.
+    # Input: None
+    # Output: None
     def input_run_scenario_menu(self):
         os.system('cls' if os.name == 'nt' else 'clear')
         print(self.headerText)
@@ -98,6 +130,11 @@ class GannManUi:
         waitForExit = input("\nPRESS ENTER TO GO BACK MENU..")
         self.state = "options"
 
+    # Description: Starts a menu which lets the user select a predefined config file which stores all the
+    #           parameters for a scenario, then passes the selection to the gann manager which
+    #           reads the file and runs the scenario
+    # Input: None
+    # Output: None
     def load_run_scenario_menu(self):
         os.system('cls' if os.name == 'nt' else 'clear')
         print(self.headerText)
@@ -122,26 +159,9 @@ class GannManUi:
         waitForExit = input("\n[Press enter to return to the main menu..]")
         self.state = "options"
 
-    def start_ui(self):
-        os.system('cls' if os.name == 'nt' else 'clear')
-        exit = False
-        while(not exit):
-            if(self.state == 'options'): self.options_menu()
-            if(self.state == 'inputRunScenario'): self.input_run_scenario_menu()
-            if(self.state == 'loadRunScenario'): self.load_run_scenario_menu()
-            if(self.state == "exit"):
-                exit = True
-                print("\nExiting program..")
-                time.sleep(0.6)
-
 
 
 
 if __name__ == '__main__':
     ui = GannManUi()
-    #ui.read_scenario_menu()
-    #ui.select_created_scenario()
-    #ui.load_best_param_scenario()
-    ui.start_ui()# doesn't work with debugging, instead run the function you want to debuf directly
-    #ex: read_scenario_menu() to experiment with different networks parameters
-    #readFileHeaders()
+    ui.start_ui()
