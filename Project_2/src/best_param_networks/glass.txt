@@ -1,16 +1,16 @@
 #RUN PARAMETERS
-epochs,20
-valInt,2
+epochs,200
+valInt,10
 bestK,1
-mapBatchSize,0
-mapLayers,2
-mapDendrograms,1
+mapBatchSize,8
+mapLayers,0 3
+mapDendrograms,
 displayWeights,
 displayBiases,
 
 #CREATION PARAMETERS
 # 9 features, 6 classes, 214 cases
-netDims,9 10 6
+netDims,9 100 10 6
 hiddenActivFunc,relu
 outputActivFunc,softmax
 lossFunc,softmax_cross_entropy
@@ -23,4 +23,4 @@ dSourceParams,
 caseFrac,1
 valFrac,0.1
 testFrac,0.1
-mbs,10
+mbs,5
