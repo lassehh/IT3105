@@ -1,5 +1,5 @@
 #RUN PARAMETERS
-epochs,1600
+epochs,700
 valInt,50
 bestK,1
 mapBatchSize,
