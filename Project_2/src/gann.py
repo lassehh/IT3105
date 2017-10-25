@@ -66,7 +66,6 @@ class Gann():
 
     def add_grabvar(self, module_index, type='wgt'):
         self.grabVars.append(self.modules[module_index].getvar(type))
-        self.grabvarFigures.append(PLT.figure())
 
     def add_mapvars(self):
         for layer_index in self.mapLayers:
@@ -259,7 +258,7 @@ class Gann():
                 v = np.array([v]) # convert to matrix
 
             if self.grabVarPlotType == 'hinton':
-                TFT.hinton_plot(v, fig=self.grabvarFigures[fig_index], title='Hinton plot of ' + names[i] + ' at step ' + str(step))
+                TFT.hinton_plot(v, fig=None, title='Hinton plot of ' + names[i] + ' at step ' + str(step))
             else: #( self.grabVarPlotType == 'matrix' )
                 TFT.display_matrix(v, fig=self.grabvarFigures[fig_index], title='Matrix of ' + names[i] + ' at step ' + str(step))
             fig_index += 1
@@ -308,8 +307,10 @@ class Gann():
                     TFT.hinton_plot(v, fig=None, title='Activation pattern of layer ' + names[i])
             if len(self.mapDendrograms) > 0:
                 names = [x.name for x in self.dendrogramVars]
-                labels = [TFT.bits_to_str(s[0]) for s in cases]
-                #labels = [TFT.one_hot_to_int(c[1]) for c in cases]
+                if TFT.is_bit_vector(cases[0][0]):
+                    labels = [TFT.bits_to_str(s[0]) for s in cases]
+                else:
+                    labels = [TFT.one_hot_to_int(c[1]) for c in cases]
                 for (i, v) in enumerate(dendrovals):
                     TFT.dendrogram(v, labels, title = 'Dendrogram of ' + names[i])
 

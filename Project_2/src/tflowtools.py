@@ -95,6 +95,11 @@ def all_one_hots(len, floats=False):
 def bits_to_str(bits): return ''.join(map(str,bits))
 def str_to_bits(s): return [int(c) for c in s]
 
+def is_bit_vector(bits):
+    bitlist =[0,1]
+    return set(bits) <= set(bitlist)
+
+
 # ****** VECTOR SHIFTING ******
 # Shift a vector right (dir=1) or left (dir= -1) and any number of spaces (delta).
 
@@ -542,19 +547,3 @@ def scale_features_by_std_and_mean(cases):
         scaled_cases.append([scaled_f, target])
     return scaled_cases
 
-filename = 'glass'
-with open('../UC_irvine/' + filename + '.txt', 'r') as f:
-    cases = []
-    for line in f:
-        line = line.strip("\n")
-        if filename == 'winequality_red':
-            currentLine = line.split(";")
-        else:
-            currentLine = line.split(",")
-        currentLine = [float(x) for x in currentLine]
-        target = int(currentLine[-1])
-        target = create_target_vector(filename, target)
-        currentLine.pop(-1)
-        feature = currentLine
-        cases.append([feature, target])
-scale_features_by_std_and_mean(cases)
