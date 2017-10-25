@@ -120,11 +120,15 @@ class Gann():
         if self.optimizer == 'gradient_descent':
             optimizer = tf.train.GradientDescentOptimizer(self.learningRate)
         elif self.optimizer == "adam":
-            optimizer = tf.train.AdamOptimizer(self.learningRate, epsilon = self.optimizerParams[0])
+            optimizer = tf.train.AdamOptimizer(self.learningRate, epsilon = self.optimizerParams[2],beta1 = self.optimizerParams[0],
+                                               beta2 = self.optimizerParams[1])
+        elif self.optimizer == 'RMSProp':
+            optimizer = tf.train.RMSPropOptimizer(self.learningRate, decay = self.optimizerParams[0], momentum = self.optimizerParams[1],
+                                                  epsilon = self.optimizerParams[2])
         elif self.optimizer == "adagrad":
             optimizer = tf.train.AdagradOptimizer(self.learningRate)
         elif self.optimizer == 'momentum':
-            optimizer = tf.train.MomentumOptimizer(self.learningRate, momentum = self.optimizerParams[0], use_nesterov = True)
+            optimizer = tf.train.MomentumOptimizer(self.learningRate, momentum = self.optimizerParams[0],  use_nesterov = True)
         else:
             raise AssertionError("Unknown optimizer: " + self.optimizer)
         self.trainer = optimizer.minimize(self.error, name='Backprop')

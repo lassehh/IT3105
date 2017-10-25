@@ -1,6 +1,6 @@
 #RUN PARAMETERS
-epochs,500
-valInt,100
+epochs,600
+valInt,30
 bestK,1
 mapBatchSize,
 mapLayers,
@@ -9,19 +9,20 @@ displayWeights,
 displayBiases,
 
 #CREATION PARAMETERS
+#netdim 250, epochs 800
 # 8 features, 10 classes, 1482 cases
-netDims,8 2000 10
+netDims,8 1200 10
 hiddenActivFunc,relu
 outputActivFunc,softmax
 lossFunc,softmax_cross_entropy
 optimizer,adam
-optimizerParams,0.00000001
+optimizerParams,0.9 0.999 0.00000001
 learningRate,0.001
 weightInitType,normalized
-weightInit,-1 1
+weightInit,-0.1 0.1
 dSourceParams,
 dataSource,yeast
 caseFrac,1
 valFrac,0.1
 testFrac,0.1
-mbs,100
+mbs,60
