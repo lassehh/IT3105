@@ -1,6 +1,6 @@
 #RUN PARAMETERS
 epochs,65
-valInt,4
+valInt,3
 bestK,1
 mapBatchSize,0
 mapLayers,2
@@ -10,17 +10,18 @@ displayBiases,
 
 #CREATION PARAMETERS
 # 4 features, 3 classes, 625 cases
-netDims,4 7 3
+netDims,4 16 3
 hiddenActivFunc,elu
 outputActivFunc,softmax
 lossFunc,softmax_cross_entropy
 optimizer,adam
-momentumFrac,0.7
-learningRate,0.001
+optimizerParams,0.01
+learningRate,0.01
 weightInitType,normalized
 weightInit,-0.1 0.1
+dataSource,hackers
 dSourceParams,
 caseFrac,1
 valFrac,0.1
 testFrac,0.1
-mbs,8
+mbs,15

@@ -19,7 +19,7 @@ optimizerParams,0.01
 learningRate,0.001
 weightInitType,normalized
 weightInit,-0.1 0.1
-#dataSource,wine
+dataSource,wine
 dSourceParams,
 caseFrac,1
 valFrac,0.1
