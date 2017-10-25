@@ -20,6 +20,7 @@ learningRate,0.001
 weightInitType,normalized
 weightInit,-1 1
 dSourceParams,
+dataSource,yeast
 caseFrac,1
 valFrac,0.1
 testFrac,0.1

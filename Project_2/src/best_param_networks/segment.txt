@@ -10,6 +10,7 @@ displayBiases,
 
 #CREATION PARAMETERS
 netDims,25 500 200 100 25 9
+dataSource,segment
 dSourceParams,25 1000 0 8
 hiddenActivFunc,relu
 outputActivFunc,softmax

@@ -1,0 +1,29 @@
+#TEMPLATE FOR A SCENARIO CONFIG FILE
+#(ALL PARAMETERS MUST BE FILLED IN)
+
+#RUN PARAMETERS
+epochs,
+valInt,
+bestK,
+mapBatchSize
+mapLayers
+mapDendrograms
+displayWeights
+displayBiases
+
+#CREATION PARAMETERS
+netDims,
+dataSource,parity
+dSourceParams,
+hiddenActivFunc,
+outputActivFunc,
+lossFunc,
+optimizer,
+optimizerParams,
+learningRate,
+weightInitType,
+weightInit,
+caseFrac,
+valFrac,
+testFrac,
+mbs,

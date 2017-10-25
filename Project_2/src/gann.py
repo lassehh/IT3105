@@ -349,6 +349,7 @@ class Gannmodule():
         self.insize = insize        # Number of neurons feeding into this module
         self.outsize = outsize      # Number of neurons in this module
         self.input = invariable     # Either the gann's input variable or the upstream module's output
+        #self.output = None
         self.index = index
         self.activationFunc = activationFunc
         self.initialWeightRange = initWeightRange
@@ -380,6 +381,9 @@ class Gannmodule():
         elif(self.activationFunc == 'softmax'):
             self.ann.rawOutput = tf.add(tf.matmul(self.input, self.weights), self.biases, name = moduleName + '-raw-out')
             self.output = tf.nn.softmax(tf.matmul(self.input, self.weights) + self.biases, name=moduleName + '-out')
+        elif(self.activationFunc == 'none'):
+            self.ann.rawOutput = tf.add(tf.matmul(self.input, self.weights), self.biases, name=moduleName + '-raw-out')
+            self.output = tf.add(tf.matmul(self.input, self.weights), self.biases, name=moduleName + '-raw-out')
         else:
             raise AssertionError('Unknown activation function ' + self.activationFunc + '.')
 

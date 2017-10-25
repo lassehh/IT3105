@@ -18,6 +18,7 @@ optimizerParams,0.1
 learningRate,0.001
 weightInitType,uniform
 weightInit,-0.1 0.1
+dataSource,bitcounter
 dSourceParams,500 15
 caseFrac,1
 valFrac,0.1

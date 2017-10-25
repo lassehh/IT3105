@@ -9,13 +9,14 @@ displayWeights,
 displayBiases,
 
 #CREATION PARAMETERS
-netDims,10 1000 2
+netDims,10 500 2
+dataSource,parity
 dSourceParams,10
 hiddenActivFunc,relu
 outputActivFunc,softmax
 lossFunc,softmax_cross_entropy
 optimizer,adam
-optimizerParams,0.1
+optimizerParams,0.01
 learningRate,0.001
 weightInitType,uniform
 weightInit,-0.1 0.1

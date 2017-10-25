@@ -26,25 +26,25 @@ class GannMan:
 
         # Generate cases for the data source
         case_generator = None
-        if(dataSource == 'bitcounter.txt'):
+        if(dataSource == 'bitcounter'):
             case_generator = (lambda: TFT.gen_vector_count_cases(dSourcePars[0], dSourcePars[1]))
-        elif(dataSource == 'autoencoder.txt'):
+        elif(dataSource == 'autoencoder'):
             case_generator = (lambda: TFT.gen_all_one_hot_cases(dSourcePars[0]))
-        elif(dataSource == 'dense_autoencoder.txt'):
-            case_generator = (lambda: TFT.gen_dense_autoencoder_cases(dSourcePars[0], dSourcePars[1], dr=(0.1, 0.9)))
-        elif(dataSource == 'parity.txt'):
+        elif(dataSource == 'dense_autoencoder'):
+            case_generator = (lambda: TFT.gen_dense_autoencoder_cases(count = dSourcePars[0], size = dSourcePars[1], dr=(0.4    , 0.7)))
+        elif(dataSource == 'parity'):
             case_generator = (lambda: TFT.gen_all_parity_cases(dSourcePars[0]))
-        elif(dataSource == 'segment.txt'):
+        elif(dataSource == 'segment'):
             case_generator = (lambda: TFT.gen_segmented_vector_cases(vectorlen = dSourcePars[0], count = dSourcePars[1], minsegs = dSourcePars[2], maxsegs = dSourcePars[3]))
-        elif(dataSource == 'MNIST.txt'):
+        elif(dataSource == 'MNIST'):
             case_generator = (lambda: TFT.gen_mnist_cases())
-        elif(dataSource == 'wine.txt'):
+        elif(dataSource == 'wine'):
             case_generator = (lambda: TFT.gen_uc_irvine_cases('winequality_red'))
-        elif(dataSource == 'glass.txt'):
+        elif(dataSource == 'glass'):
             case_generator = (lambda: TFT.gen_uc_irvine_cases('glass'))
-        elif(dataSource == 'yeast.txt'):
+        elif(dataSource == 'yeast'):
             case_generator = (lambda: TFT.gen_uc_irvine_cases('yeast'))
-        elif(dataSource == 'hackers.txt'):
+        elif(dataSource == 'hackers'):
             case_generator = (lambda: TFT.gen_hackers_choice_cases('balance-scale'))
         else:
             raise NotImplementedError("Datasource: " + dataSource + " is not implemented")
@@ -80,9 +80,7 @@ class GannMan:
         self.gann.run_mapping(mapBatchSize = mapBatchSize, mapDendrograms = mapDendrograms, mapLayers = mapLayers)
 
     def do_gann_from_config(self, fileName):
-        dataSource = fileName
-        name = fileName + '_best'
-        momentumFrac = None
+        name = fileName
         with open('best_param_networks/' + fileName, 'r') as f:
             for paramLine in f:
                 paramLine = paramLine.strip("\n")
@@ -111,6 +109,7 @@ class GannMan:
                     elif paramName == 'learningRate': learningRate = paramLine[0]
                     elif paramName == 'weightInitType': weightInitType = paramLine[0]
                     elif paramName == 'weightInit': weightInit = paramLine[0]
+                    elif paramName == 'dataSource': dataSource = paramLine[0]
                     elif paramName == 'dSourceParams': dSourceParams = paramLine[0]
                     elif paramName == 'caseFrac': caseFrac = paramLine[0]
                     elif paramName == 'valFrac': valFrac = paramLine[0]
