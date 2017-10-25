@@ -15,7 +15,7 @@ hiddenActivFunc,elu
 outputActivFunc,softmax
 lossFunc,softmax_cross_entropy
 optimizer,adam
-optimizerParams,0.01
+optimizerParams,0.9 0.999 0.01
 learningRate,0.01
 weightInitType,normalized
 weightInit,-0.1 0.1
