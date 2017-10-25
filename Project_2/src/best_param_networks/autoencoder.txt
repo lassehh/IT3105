@@ -6,16 +6,16 @@ mapBatchSize,8
 # for activ. maps index 0 is the input
 mapLayers,0 1
 # for dendrograms index 0 is the first hidden layer
-mapDendrograms,
-displayWeights,
-displayBiases,
+mapDendrograms,0
+displayWeights,0
+displayBiases,0
 
 #CREATION PARAMETERS
 netDims,8 8
 dataSource,autoencoder
 dSourceParams,8
 hiddenActivFunc,relu
-outputActivFunc,none
+outputActivFunc,softmax
 lossFunc,softmax_cross_entropy
 optimizer,adam
 optimizerParams,0.9 0.999 0.0001
@@ -23,6 +23,6 @@ learningRate,0.001
 weightInitType,normalized
 weightInit,-0.1 0.1
 caseFrac,1
-valFrac,0.1
-testFrac,0.1
+valFrac,0
+testFrac,0
 mbs,1
