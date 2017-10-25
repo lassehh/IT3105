@@ -378,7 +378,7 @@ class Gannmodule():
             self.output = tf.nn.softmax(tf.matmul(self.input, self.weights) + self.biases, name=moduleName + '-out')
         elif(self.activationFunc == 'none'):
             self.ann.rawOutput = tf.add(tf.matmul(self.input, self.weights), self.biases, name=moduleName + '-raw-out')
-            self.output = tf.add(tf.matmul(self.input, self.weights), self.biases, name=moduleName + '-raw-out')
+            self.output = tf.add(tf.matmul(self.input, self.weights), self.biases, name=moduleName + '-out')
         else:
             raise AssertionError('Unknown activation function ' + self.activationFunc + '.')
 
