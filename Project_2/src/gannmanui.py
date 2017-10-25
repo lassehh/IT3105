@@ -1,4 +1,5 @@
 import os
+import glob
 from gannman import *
 import time
 from msvcrt import getwch
@@ -48,13 +49,13 @@ class GannManUi:
         hiddenActivationFunc = input("Hidden activation function (relu, sigmoid or tanh): ")
         outputActivationFunc = input("Output activation function (softmax, none): ")
         lossFunc = input("Loss function (MSE, softmax_cross_entropy, sigmoid_cross_entropy): ")
-        optimizer = input("Optimizer (gradient_descent or momentum): ")
+        optimizer = input("Optimizer (gradient_descent momentum, adam, adagrad): ")
         if optimizer == 'adam' or optimizer == "adagrad" or optimizer == 'momentum':
-            optimizerParams = input("Optmizer params (epsilon):")
+            optimizerParams = input("Optmizer params (epsilon, accumulator, momentum):")
         else:
             optimizerParams = None
         learningRate = input("Learning rate <0, 1>: ")
-        weightInitType = input("Weight initializing method: ")
+        weightInitType = input("Weight initializing method (normalized, uniform): ")
         if weightInitType == 'uniform':
             weightInit = input("Initial weight range (or scaled): ")
         else:
@@ -75,21 +76,24 @@ class GannManUi:
         selectDisplayWeights = input("Weights to be visualized: ")
         selectDisplayBiases = input("Biases to be visualized: ")
 
-        # Create the gann object
-        self.gannMan.create_gann(name, networkDims, hiddenActivationFunc, outputActivationFunc,
-                                 lossFunc, optimizer, optimizerParams, learningRate, weightInitType, weightInit, dataSource, dataSourceParas,
-                                 caseFrac, valFrac, testFrac, miniBatchSize)
+        confirmation = input("Abort parameters? [y]: ")
+        if confirmation == 'y': pass
+        else:
+            # Create the gann object
+            self.gannMan.create_gann(name, networkDims, hiddenActivationFunc, outputActivationFunc,
+                                     lossFunc, optimizer, optimizerParams, learningRate, weightInitType, weightInit, dataSource, dataSourceParas,
+                                     caseFrac, valFrac, testFrac, miniBatchSize)
 
-        # Run: train and test the gann
-        self.gannMan.run_gann(epochs = int(selectEpochs), showInterval = None,
-                validationInterval = int(selectValInt), bestk = selectBestK, mapBatchSize = selectMapBatchSize,
-                mapLayers = selectMapLayers, mapDendrograms = selectMapDendrograms, displayWeights = selectDisplayWeights,
-                displayBiases = selectDisplayBiases)
+            # Run: train and test the gann
+            self.gannMan.run_gann(epochs = int(selectEpochs), showInterval = None,
+                    validationInterval = int(selectValInt), bestK = selectBestK, mapBatchSize = selectMapBatchSize,
+                    mapLayers = selectMapLayers, mapDendrograms = selectMapDendrograms, displayWeights = selectDisplayWeights,
+                    displayBiases = selectDisplayBiases)
 
 
-        # When finished, reset the gann man
-        del self.gannMan
-        self.gannMan = GannMan()
+            # When finished, reset the gann man
+            del self.gannMan
+            self.gannMan = GannMan()
 
         waitForExit = input("\nPRESS ENTER TO GO BACK MENU..")
         self.state = "options"
@@ -98,15 +102,22 @@ class GannManUi:
         os.system('cls' if os.name == 'nt' else 'clear')
         print(self.headerText)
         print("--- LOAD BEST PARAMETER SCENARIO --- \n")
-        print("Available datasources:")
-        print("> bitcounter\n> parity\n> segment\n> autoencoder\n> dense_autoencoder\n> MNIST\n> wine\n> yeast\n> glass\n> hackers")
+        print("Supported config formats: .txt\n")
+        print("Available scenarios:\n")
+        for root, dirs, files in os.walk("best_param_networks"):
+            for file in files:
+                if file.endswith('.txt'):
+                    print(file)
 
         selectDataSource = input("\nSelect data source: ")
-        self.gannMan.do_gann_from_config(selectDataSource)
+        confirmation = input("Abort data source selection [y]: ")
+        if confirmation == 'y': pass
+        else:
+            self.gannMan.do_gann_from_config(selectDataSource)
 
-        # When finished, reset the gann man
-        del self.gannMan
-        self.gannMan = GannMan()
+            # When finished, reset the gann man
+            del self.gannMan
+            self.gannMan = GannMan()
 
         waitForExit = input("\n[Press enter to return to the main menu..]")
         self.state = "options"
@@ -121,8 +132,7 @@ class GannManUi:
             if(self.state == "exit"):
                 exit = True
                 print("\nExiting program..")
-                time.sleep(1.2)
-
+                time.sleep(0.6)
 
 
 
@@ -134,3 +144,4 @@ if __name__ == '__main__':
     #ui.load_best_param_scenario()
     ui.start_ui()# doesn't work with debugging, instead run the function you want to debuf directly
     #ex: read_scenario_menu() to experiment with different networks parameters
+    #readFileHeaders()

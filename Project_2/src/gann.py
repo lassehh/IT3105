@@ -64,15 +64,10 @@ class Gann():
     def gen_probe(self, module_index, type, spec):
         self.modules[module_index].gen_probe(type, spec)
 
-    # Grabvars are displayed by my own code, so I have more control over the display format.  Each
-    # grabvar gets its own matplotlib figure in which to display its value.
     def add_grabvar(self, module_index, type='wgt'):
         self.grabVars.append(self.modules[module_index].getvar(type))
         self.grabvarFigures.append(PLT.figure())
 
-
-    # Assumed that layer_index = 0 means that we want to monitor the input to the first hidden layer.
-    # layer index = 1 means that we want to monitor the output of the first hidden layer, i-e the input of the second hidden layer
     def add_mapvars(self):
         for layer_index in self.mapLayers:
             if layer_index == (len(self.modules)): # the last output
@@ -109,11 +104,6 @@ class Gann():
         self.target = tf.placeholder(tf.float64, shape=(None,gmod.outsize), name='Target')
         self.configure_learning()
 
-
-
-    # The optimizer knows to gather up all "trainable" variables in the function graph and compute
-    # derivatives of the error function with respect to each component of each variable, i.e. each weight
-    # of the weight array.
 
     def configure_learning(self):
         if self.lossFunc == 'MSE':
@@ -173,10 +163,6 @@ class Gann():
                                   title="History", fig=not(continued))
 
 
-    # bestk = 1 when you're doing a classification task and the targets are one-hot vectors.  This will invoke the
-    # gen_match_counter error function. Otherwise, when
-    # bestk=None, the standard loss function is used for testing.
-
     def do_testing(self, sess, cases, epoch = 'test', msg='Testing', bestk=1):
         inputs = [c[0] for c in cases]; targets = [c[1] for c in cases]
         feeder = {self.input: inputs, self.target: targets}
@@ -197,8 +183,6 @@ class Gann():
         return loss, grabvals  # self.error uses MSE, so this is a per-case value when bestk=None
 
 
-    # Mapping: post-training activity that is designed to clarify the link between input patterns and hidden and/or output patterns.
-    # USe the grabbed variables
     def do_mapping(self, session, cases):
         inputs = [c[0] for c in cases]
         targets = [c[1] for c in cases]
@@ -212,16 +196,6 @@ class Gann():
         dendrogram_vals = vals[1]
         return mapped_vals, dendrogram_vals
 
-
-
-    # Logits = tensor, float - [batch_size, NUM_CLASSES].
-    # labels: Labels tensor, int32 - [batch_size], with values in range [0, NUM_CLASSES).
-    # in_top_k checks whether correct val is in the top k logit outputs.  It returns a vector of shape [batch_size]
-    # This returns a OPERATION object that still needs to be RUN to get a count.
-    # tf.nn.top_k differs from tf.nn.in_top_k in the way they handle ties.  The former takes the lowest index, while
-    # the latter includes them ALL in the "top_k", even if that means having more than k "winners".  This causes
-    # problems when ALL outputs are the same value, such as 0, since in_top_k would then signal a match for any
-    # target.  Unfortunately, top_k requires a different set of arguments...and is harder to use.
 
     def gen_match_counter(self, logits, labels, k = 1):
         correct = tf.nn.in_top_k(tf.cast(logits, tf.float32), labels, k) # Return number of correct outputs
@@ -339,21 +313,9 @@ class Gann():
             pass
         PLT.close('all')
 
-    # After a run is complete, runmore allows us to do additional training on the network, picking up where we
-    # left off after the last call to run (or runmore).  Use of the "continued" parameter (along with
-    # global_training_step) allows easy updating of the error graph to account for the additional run(s).
-
     def runmore(self, epochs=100, bestk=None):
         self.reopen_current_session()
         self.run(epochs, sess = self.current_session, continued = True, bestk = bestk)
-
-    #   ******* Saving GANN Parameters (weights and biases) *******************
-    # This is useful when you want to use "runmore" to do additional training on a network.
-    # spath should have at least one directory (e.g. netsaver), which you will need to create ahead of time.
-    # This is also useful for situations where you want to first train the network, then save its parameters
-    # (i.e. weights and biases), and then run the trained network on a set of test cases where you may choose to
-    # monitor the network's activity (via grabvars, probes, etc) in a different way than you monitored during
-    # training.
 
     def save_session_params(self, spath='netsaver/my_saved_session', sess=None, step=0):
         session = sess if sess else self.current_session

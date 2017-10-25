@@ -26,26 +26,25 @@ class GannMan:
 
         # Generate cases for the data source
         case_generator = None
-        if(dataSource == 'bitcounter'):
+        if(dataSource == 'bitcounter.txt'):
             case_generator = (lambda: TFT.gen_vector_count_cases(dSourcePars[0], dSourcePars[1]))
-        elif(dataSource == 'autoencoder'):
+        elif(dataSource == 'autoencoder.txt'):
             case_generator = (lambda: TFT.gen_all_one_hot_cases(dSourcePars[0]))
-        elif(dataSource == 'dense_autoencoder'):
+        elif(dataSource == 'dense_autoencoder.txt'):
             case_generator = (lambda: TFT.gen_dense_autoencoder_cases(dSourcePars[0], dSourcePars[1], dr=(0.1, 0.9)))
-        elif(dataSource == 'parity'):
+        elif(dataSource == 'parity.txt'):
             case_generator = (lambda: TFT.gen_all_parity_cases(dSourcePars[0]))
-        elif(dataSource == 'segment'):
-            case_generator = (lambda: TFT.gen_segmented_vector_cases(vectorlen = dSourcePars[0], count = dSourcePars[1],
-                                                                     minsegs = dSourcePars[2], maxsegs = dSourcePars[3]))
-        elif(dataSource == 'MNIST'):
+        elif(dataSource == 'segment.txt'):
+            case_generator = (lambda: TFT.gen_segmented_vector_cases(vectorlen = dSourcePars[0], count = dSourcePars[1], minsegs = dSourcePars[2], maxsegs = dSourcePars[3]))
+        elif(dataSource == 'MNIST.txt'):
             case_generator = (lambda: TFT.gen_mnist_cases())
-        elif(dataSource == 'wine'):
+        elif(dataSource == 'wine.txt'):
             case_generator = (lambda: TFT.gen_uc_irvine_cases('winequality_red'))
-        elif(dataSource == 'glass'):
+        elif(dataSource == 'glass.txt'):
             case_generator = (lambda: TFT.gen_uc_irvine_cases('glass'))
-        elif(dataSource == 'yeast'):
+        elif(dataSource == 'yeast.txt'):
             case_generator = (lambda: TFT.gen_uc_irvine_cases('yeast'))
-        elif(dataSource == 'hackers'):
+        elif(dataSource == 'hackers.txt'):
             case_generator = (lambda: TFT.gen_hackers_choice_cases('balance-scale'))
         else:
             raise NotImplementedError("Datasource: " + dataSource + " is not implemented")
@@ -84,12 +83,12 @@ class GannMan:
         dataSource = fileName
         name = fileName + '_best'
         momentumFrac = None
-        with open('best_param_networks/' + fileName + '.txt', 'r') as f:
+        with open('best_param_networks/' + fileName, 'r') as f:
             for paramLine in f:
                 paramLine = paramLine.strip("\n")
                 paramLine = paramLine.split(",")
-                if(paramLine[0] == ''): continue
-                elif(paramLine[0][0] == '#'): continue #Skip comments and empty lines
+                if(paramLine[0] == ''): continue # Skip empty lines
+                elif(paramLine[0][0] == '#'): continue #Skip comments
                 else:
                     paramName = paramLine[0]
                     paramLine.pop(0)
@@ -128,7 +127,3 @@ class GannMan:
                                  mapBatchSize=mapBatchSize,
                                  mapLayers=mapLayers, mapDendrograms=mapDendrograms,
                                  displayWeights=displayWeights, displayBiases=displayBiases)
-
-#man = GannMan()
-#man.do_gann_from_config(fileName='dense_autoencoder')
-

@@ -1,22 +1,23 @@
 #RUN PARAMETERS
-epochs,4000
-valInt,35
+epochs,1600
+valInt,50
 bestK,1
-mapBatchSize,6
-mapLayers,2
-mapDendrograms,1
+mapBatchSize,
+mapLayers,
+mapDendrograms,
 displayWeights,
 displayBiases,
 
 #CREATION PARAMETERS
-netDims,10 30 2
+netDims,10 1000 2
 dSourceParams,10
 hiddenActivFunc,relu
 outputActivFunc,softmax
 lossFunc,softmax_cross_entropy
-optimizer,momentum
-momentumFrac,0.7
-learningRate,0.01
+optimizer,adam
+optimizerParams,0.1
+learningRate,0.001
+weightInitType,uniform
 weightInit,-0.1 0.1
 caseFrac,1
 valFrac,0.1
