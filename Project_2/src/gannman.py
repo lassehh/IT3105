@@ -1,16 +1,27 @@
-from gann import *
-import tflowtools as TFT
 import time
+import tflowtools as TFT
+from gann import *
 
+""" 
+Class: GannMan
+Handles all the user-specified parameters from the GannManUi to create and run scenarios.
+
+Dependencies: gann, tflowtools
+
+"""
 class GannMan:
-    gann = None
+    ann = None                 # The general neural network which a GannMan object manages
 
     def __init__(self):
-        self.gann = None
+        self.ann = None
 
     def __del__(self):
         pass
 
+    # Description: Formats the parameters passed to this function and then creates a gann with the specified
+    #           parameters.
+    # Input: All parameters needed for a nn architecture.
+    # Output: None
     def create_gann(self, name, networkDimsString, hiddenActivationFunc, outputActivationFunc,
                     lossFunc, optimizer, optimizerParams,learningRate, weightInitType, weightInit, dataSource, dSourcePars, caseFrac, valFrac,
                     testFrac, miniBatchSize):
@@ -24,7 +35,7 @@ class GannMan:
         if optimizerParams == '': optimizerParams = []
         else: optimizerParams = [float(i) for i in optimizerParams.split(" ")]
 
-        # Generate cases for the data source
+        # Find the correct case-generating function
         case_generator = None
         if(dataSource == 'bitcounter'):
             case_generator = (lambda: TFT.gen_vector_count_cases(dSourcePars[0], dSourcePars[1]))
@@ -55,10 +66,12 @@ class GannMan:
                    mbs = int(miniBatchSize), hiddenActivationFunc = hiddenActivationFunc,
                    outputActivationFunc = outputActivationFunc, lossFunc = lossFunc,
                    optimizer = optimizer, optimizerParams = optimizerParams, weightInitType = weightInitType, weightRange = weightInit)
-        #ann.run(epochs = 200, showInterval = 200, validationInterval = 10, bestk = 1)
-        self.gann = ann
+        self.ann = ann
 
-
+    # Description: Formats the parameters passed to this function and then runs the gann with the specified
+    #           parameters.
+    # Input: All parameters needed to run a gann
+    # Output: None
     def run_gann(self, showInterval = None, validationInterval = 100, epochs=100, sess=None,
                     mapBatchSize = '', displayWeights = '', displayBiases = '', continued=False,
                     mapLayers = '', mapDendrograms = '', bestK=None):
@@ -74,11 +87,14 @@ class GannMan:
         else: displayBiases = [int(i) for i in displayBiases.split(" ")]
         if bestK == 'none': bestK = None
         else: bestK = int(bestK)
-        self.gann.run(epochs=epochs, showInterval=showInterval, validationInterval=validationInterval, bestk=bestK,
-                    displayWeights = displayWeights, displayBiases = displayBiases)#displayBiases = displayBiases, displayWeights = displayWeights,
-                    #mapDendrograms = mapDendrograms, mapBatchSize = mapBatchSize)
-        self.gann.run_mapping(mapBatchSize = mapBatchSize, mapDendrograms = mapDendrograms, mapLayers = mapLayers)
+        self.ann.run(epochs=epochs, showInterval=showInterval, validationInterval=validationInterval, bestk=bestK,
+                     displayWeights = displayWeights, displayBiases = displayBiases)
+        self.ann.run_mapping(mapBatchSize = mapBatchSize, mapDendrograms = mapDendrograms, mapLayers = mapLayers)
 
+    # Description: Reads all the neccessary parameters from a predefined file for a network scenario and passes
+    #           them to create_gann and run_Ggann.
+    # Input: filename
+    # Output: None
     def do_gann_from_config(self, fileName):
         name = fileName
         with open('best_param_networks/' + fileName, 'r') as f:
