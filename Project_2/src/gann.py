@@ -9,7 +9,6 @@ import math
 
 
 class Gann():
-    grabVarPlotType = 'hinton' # 'hinton' or 'matrix'
 
     def __init__(self, name, netDims, cMan, hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax',
                  lossFunc = 'MSE', optimizer = 'gradient_descent', optimizerParams = None, learningRate = 0.1, momentum = 0.1, weightRange = (-1,1), weightInitType = 'normalized',
@@ -135,7 +134,6 @@ class Gann():
             self.error_history = []
             self.validationHistory = []
             self.globalTrainingStep = 0
-        last_grabvals = []
         for i in range(epochs):
             error = 0
             step = self.globalTrainingStep + i
@@ -155,7 +153,6 @@ class Gann():
                     step = self.globalTrainingStep + i + 1
 
                 error += grabvals[0]
-                #last_grabvals = grabvals
             step = self.globalTrainingStep + i
             self.error_history.append((step, error/nmb))
             self.consider_validation_testing(step, sess)
@@ -167,9 +164,8 @@ class Gann():
     def do_testing(self, sess, cases, epoch = 'test', msg='Testing', bestk=1):
         inputs = [c[0] for c in cases]; targets = [c[1] for c in cases]
         feeder = {self.input: inputs, self.target: targets}
-        #test_func = self.error
-        #if bestk is not None:
         testFunc = self.gen_match_counter(self.output, [TFT.one_hot_to_int(list(v)) for v in targets], k = 1)
+
         accuracy, _, _ = self.run_one_step(grabbed_vars = self.grabVars, probed_vars = self.probes,
                                            operators = testFunc, session = sess,
                                            feed_dict = feeder, showInterval = 0)
@@ -177,11 +173,12 @@ class Gann():
                                               operators=self.error, session=sess,
                                               feed_dict=feeder, showInterval=0)
         accuracy = 100 * (accuracy / len(cases))
+
         if bestk is None:
             print('Epoch: %s\t\t %s loss: N/A\t\t %s : %s %%' % (epoch, msg, msg, accuracy))
         else:
             print('Epoch: %s\t\t %s loss: %5.4f\t\t %s accuracy: %d %%' % (epoch, msg, loss, msg, accuracy))
-        return loss  # self.error uses MSE, so this is a per-case value when bestk=None
+        return loss
 
 
     def do_mapping(self, session, cases):
@@ -226,7 +223,6 @@ class Gann():
         self.do_testing(sess, cases = self.caseMan.get_training_cases(), epoch = 'test', msg='Final training', bestk=bestk)
 
     # Similar to the "quickrun" functions used earlier.
-
     def run_one_step(self, operators, grabbed_vars = None, probed_vars = None, dir = 'probeview',
                      session = None, feed_dict = None, step = 1, showInterval = 1):
         sess = session if session else TFT.gen_initialized_session(dir=dir)
@@ -237,9 +233,6 @@ class Gann():
             results = sess.run([operators, grabbed_vars], feed_dict = feed_dict)
 
         return results[0], results[1], sess
-
-    def display_loss_and_error(self):
-        pass
 
 
     def display_grabvars(self, grabbed_vals, grabbed_vars, step=1):
@@ -256,18 +249,17 @@ class Gann():
 
     def run(self, showInterval = 100, validationInterval = 100, displayWeights = [], displayBiases = [],
             plot_type = 'hinton', epochs=100, sess=None, continued=False, bestk=None):
-        self.showInterval = showInterval                        # Frequency of showing grabbed variables
+        self.showInterval = showInterval                # Frequency of showing grabbed variables
         self.validationInterval = validationInterval
 
-        self.displayWeights = displayWeights  # List of the weight arrays(their hidden layer indices) to be visualized at the end of the run
-        self.displayBiases = displayBiases  # List of the bias vectors(their hidden layer indices) to be visualized at the end of the run
+        self.displayWeights = displayWeights            # List of the weight arrays(their hidden layer indices) to be visualized at the end of the run
+        self.displayBiases = displayBiases              # List of the bias vectors(their hidden layer indices) to be visualized at the end of the run
 
-        #PLT.ion()
         self.training_session(epochs, sess = sess, continued = continued)
         self.test_on_trains(sess = self.current_session, bestk = bestk)
         self.testing_session(sess = self.current_session, bestk = bestk)
         self.close_current_session(view = False)
-        #PLT.ioff()
+
 
     def run_mapping(self, case_generator = None, mapBatchSize = 0, mapLayers = [], mapDendrograms = []):
         self.mapBatchSize = mapBatchSize        # Size of batch of cases used for a map test. 0 indicates no map test
@@ -288,6 +280,7 @@ class Gann():
             for bias in self.displayBiases:
                 self.add_grabvar(bias, 'bias')
 
+            # run map test
             mapvals, dendrovals, grabvals = self.do_mapping(session = self.current_session, cases = cases)
 
             # Plotting
@@ -295,6 +288,7 @@ class Gann():
             for i, v in enumerate(mapvals):
                 if type(v) == np.ndarray and len(v.shape) > 1:  # If v is a matrix, use hinton plotting
                     TFT.hinton_plot(v, fig=None, title='Activation pattern of layer ' + names[i])
+
             if len(self.mapDendrograms) > 0:
                 names = [x.name for x in self.dendrogramVars]
                 if TFT.is_bit_vector(cases[0][0]):
@@ -303,11 +297,15 @@ class Gann():
                     labels = [TFT.one_hot_to_int(c[1]) for c in cases]
                 for (i, v) in enumerate(dendrovals):
                     TFT.dendrogram(v, labels, title = 'Dendrogram of ' + names[i])
+
             if len(grabvals) > 0:
                 self.display_grabvars(grabvals, self.grabVars, step = self.globalTrainingStep)
+
+        # hold until a button is pressed
         while (not PLT.waitforbuttonpress()):
             pass
         PLT.close('all')
+
 
     def runmore(self, epochs=100, bestk=None):
         self.reopen_current_session()
@@ -357,15 +355,16 @@ class Gannmodule():
         n = self.outsize
         if self.ann.weightInitType == 'normalized':
             self.weights = tf.Variable(np.random.randn(self.insize,n)*math.sqrt(2.0/self.insize), name=moduleName+'-wgt', trainable=True)
-
         elif self.ann.weightInitType == 'uniform':
             (lower_w, upper_w) = self.initialWeightRange
             self.weights = tf.Variable(np.random.uniform(lower_w, upper_w, size=(self.insize,n)),
                                    name=moduleName+'-wgt', trainable=True) # True = default for trainable anyway
+
         self.biases = tf.Variable(np.random.uniform(-0.01, 0.01, size=n),
                                   name=moduleName+'-bias', trainable=True)  # First bias vector
 
         # Set activation function for the neurons in the module
+        # 'softmax' is only used on the final layer
         if(self.activationFunc == 'relu'):
             self.output = tf.nn.relu(tf.matmul(self.input, self.weights) + self.biases, name=moduleName+'-out')
         elif (self.activationFunc == 'elu'):
@@ -447,39 +446,4 @@ class Caseman():
 
 
 
-def autoex(epochs=300, nbits=4, lrate=0.03, showint=100, mbs=None, vfrac=0.1, tfrac=0.1, vint=100,  bestk=1):
-    size = 2**nbits
-    mbs = mbs if mbs else size
-    case_generator = (lambda : TFT.gen_all_one_hot_cases(2**nbits))
-    cman = Caseman(cfunc = case_generator, vfrac = vfrac, tfrac = tfrac)
-    ann = Gann(netDims = [size, nbits, size], cMan = cman, learningRate = lrate, mbs = mbs,
-               hiddenActivationFunc = 'relu', outputActivationFunc = 'none')
-    #ann.gen_probe(0, 'wgt', ('hist','avg'))  # Plot a histogram and avg of the incoming weights to module 0.
-    #ann.gen_probe(1, 'out', ('avg','max'))  # Plot average and max value of module 1's output vector
-    #ann.add_grabvar(0, 'wgt') # Add a grabvar (to be displayed in its own matplotlib window).
-    ann.run(epochs = epochs, showInterval = showint, validationInterval = vint, bestk = bestk)
-    ann.runmore(epochs*2, bestk = bestk)
-    return ann
 
-
-def countex(epochs=100, nbits=4, ncases=500, lrate=0.1, showint=500, mbs=10, cfrac = 1.0, vfrac=0.1, tfrac=0.1, vint=20, bestk=1):
-    mapBatchSize = 2**nbits
-    case_generator = (lambda: TFT.gen_vector_count_cases(ncases,nbits))
-    cman = Caseman(cfunc=case_generator, cfrac=cfrac, vfrac=vfrac, tfrac=tfrac)
-    ann = Gann(name = 'countex', netDims=[nbits, nbits*3, nbits*3, nbits+1], cMan=cman, learningRate=lrate, mbs=mbs,
-               hiddenActivationFunc = 'relu', outputActivationFunc = 'softmax', lossFunc = 'softmax_cross_entropy',
-               optimizer = 'momentum', momentum = 0.1, weightRange=(-.1,.1))
-
-    ann.run(epochs = epochs, showInterval = showint, validationInterval = vint, displayBiases=[], displayWeights=[], plot_type = 'hinton', bestk = bestk)
-    #TFT.plot_training_history(ann.error_history, ann.validationHistory, xtitle="Epoch", ytitle="Error",
-                           #   title="training history", fig=True)
-
-    # generate all possible input cases
-    case_generator = (lambda: TFT.gen_vector_count_cases(mapBatchSize, nbits, random=False))
-    ann.run_mapping(case_generator, mapBatchSize = mapBatchSize, mapLayers = [0], mapDendrograms = [2])
-
-
-    return ann
-
-
-#countex()

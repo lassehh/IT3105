@@ -95,6 +95,7 @@ def all_one_hots(len, floats=False):
 def bits_to_str(bits): return ''.join(map(str,bits))
 def str_to_bits(s): return [int(c) for c in s]
 
+# checks if a vector is binary
 def is_bit_vector(bits):
     bitlist =[0,1]
     return set(bits) <= set(bitlist)
@@ -458,8 +459,9 @@ def gen_mnist_cases(data_dir = 'mnist', one_hot = True):
     mnist_data = mnist.read_data_sets(data_dir, one_hot=one_hot)
     (images, labels) = (mnist_data.train.images.tolist(), mnist_data.train.labels.tolist())
     dataset = [[fvec, target] for fvec, target in zip(images, labels)]
-    # return the dataset as a vector, where each row consists of images (784 elements) and labels
+    # Return the dataset as a vector, where each row consists of images (784 elements) and labels
     # Images have been preprocessed by casting to float32 and normalizing the pixels to range [0,1]
+    # Labels are one-hot vectors
     return dataset
 
 # UC Irvine datasets
@@ -479,10 +481,17 @@ def gen_uc_irvine_cases(filename):
             currentLine.pop(-1)
             feature = currentLine
             cases.append([feature, target])
+    # Return the dataset as a vector, where each row consists of features and labels
+    # Features have been preprocessed by scaling (by mean and standard deviation)
+    # Labels are one-hot vectors
     return scale_features_by_std_and_mean(cases)
 
 
-
+# Balance scale dataset from UC Irvine Machine Learning Repository
+# Each ex is classified as having the balance scale tip to the right(2), left(0) or be balanced(1)
+#Attributes/features: left weight, left distance, right weight, right distance
+# Correct classification: the greater of (left-distance * left-weight) and (right-distance * right-weight).  If they are equal, it is balanced
+# 625 instances
 def gen_hackers_choice_cases(filename):
     target_dict ={'L': 0,
                   'B': 1,
@@ -499,7 +508,7 @@ def gen_hackers_choice_cases(filename):
             cases.append([feature_vec, target])
     return cases
 
-
+# convert the labels to one-hot vectors (some feature values are missing)
 def create_target_vector(filename, target):
     if filename == 'winequality_red':
         num_classes = 6
@@ -515,7 +524,8 @@ def create_target_vector(filename, target):
         target = int_to_one_hot(class_dict[target], num_classes)
     return target
 
-
+# scale features to the range [0,1]
+# unused function
 def scale_features(cases):
     max_f = [0]*len(cases[0][0])
     min_f = [float('Inf')]*len(cases[0][0])
@@ -532,6 +542,7 @@ def scale_features(cases):
         scaled_cases.append([scaled_f, target])
     return scaled_cases
 
+# scale features by standard deviation and mean across each feature
 def scale_features_by_std_and_mean(cases):
     features_transposed = np.zeros((len(cases[0][0]), len(cases)))
     features = np.zeros((len(cases), len(cases[0][0])))
