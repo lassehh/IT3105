@@ -474,7 +474,7 @@ def gen_uc_irvine_cases(filename):
             currentLine.pop(-1)
             feature = currentLine
             cases.append([feature, target])
-    return scale_features(cases)
+    return scale_features_by_std_and_mean(cases)
 
 
 
@@ -527,3 +527,34 @@ def scale_features(cases):
         scaled_cases.append([scaled_f, target])
     return scaled_cases
 
+def scale_features_by_std_and_mean(cases):
+    features_transposed = np.zeros((len(cases[0][0]), len(cases)))
+    features = np.zeros((len(cases), len(cases[0][0])))
+    for case_i, case in enumerate(cases):
+        features[case_i] = case[0]
+
+    std = np.std(features, axis = 0)
+    mean = np.mean(features, axis = 0)
+    scaled_cases = []
+    for c in cases:
+        target = c[1]
+        scaled_f = [(f - mean[i])/std[i] for i, f in enumerate(c[0])]
+        scaled_cases.append([scaled_f, target])
+    return scaled_cases
+
+filename = 'glass'
+with open('../UC_irvine/' + filename + '.txt', 'r') as f:
+    cases = []
+    for line in f:
+        line = line.strip("\n")
+        if filename == 'winequality_red':
+            currentLine = line.split(";")
+        else:
+            currentLine = line.split(",")
+        currentLine = [float(x) for x in currentLine]
+        target = int(currentLine[-1])
+        target = create_target_vector(filename, target)
+        currentLine.pop(-1)
+        feature = currentLine
+        cases.append([feature, target])
+scale_features_by_std_and_mean(cases)

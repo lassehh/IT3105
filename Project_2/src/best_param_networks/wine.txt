@@ -1,26 +1,27 @@
 #RUN PARAMETERS
-epochs,200
-valInt,10
+epochs,450
+valInt,30
 bestK,1
 mapBatchSize,0
-mapLayers,
+mapLayers,0 3
 mapDendrograms,
 displayWeights,
 displayBiases,
 
 #CREATION PARAMETERS
 # 11 features, 6 classes, 1599 cases
-netDims,11 22 22 6
+netDims,11 500 30 6
 hiddenActivFunc,relu
 outputActivFunc,softmax
 lossFunc,softmax_cross_entropy
 optimizer,adam
 optimizerParams,0.01
 learningRate,0.001
-weightInitType,uniform
+weightInitType,normalized
 weightInit,-0.1 0.1
+#dataSource,wine
 dSourceParams,
 caseFrac,1
 valFrac,0.1
 testFrac,0.1
-mbs,1
+mbs,100
