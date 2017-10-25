@@ -106,14 +106,13 @@ class Gann():
     def configure_learning(self):
         if self.lossFunc == 'MSE':
             self.error = tf.losses.mean_squared_error(self.target, self.output)
-            #self.error = tf.reduce_mean(tf.square(self.target - self.output), name='MSE')
         elif self.lossFunc == 'softmax_cross_entropy':
             self.error = tf.losses.softmax_cross_entropy(self.target, self.rawOutput)
         elif self.lossFunc == 'sigmoid_cross_entropy':
             self.error = tf.losses.sigmoid_cross_entropy(self.target, self.rawOutput)
         else:
             raise AssertionError("Unknown loss function: " + self.lossFunc)
-        #self.output = self.output  # Simple prediction runs will request the value of output neurons
+
         # Defining the training operator
         if self.optimizer == 'gradient_descent':
             optimizer = tf.train.GradientDescentOptimizer(self.learningRate)
@@ -252,7 +251,7 @@ class Gann():
             elif type(v) == np.ndarray and len(v.shape) == 1: # if v is a vector (i.e. a bias vector)
                 v = np.array([v]) # convert to matrix
 
-            TFT.hinton_plot(v, fig=None, title='Hinton plot of ' + names[i] + ' at step ' + str(step))
+            TFT.display_matrix(v, fig=None, title='Matrix plot of ' + names[i] + ' at step ' + str(step))
             fig_index += 1
 
     def run(self, showInterval = 100, validationInterval = 100, displayWeights = [], displayBiases = [],
