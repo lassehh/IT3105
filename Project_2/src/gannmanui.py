@@ -9,7 +9,7 @@ class GannManUi:
     gannMan = None
     pointer = '>>'
     menuIndexPointer = 0
-    headerText = '< GANN MANAGER UI - PROJECT 2 DEMO >\n'
+    headerText = '### GANN MANAGER UI - PROJECT 2 DEMO ###\n'
     stateDict = {0: 'inputRunScenario', 1: 'loadRunScenario', 2: 'exit'}
     initMenuOptions = { 0: 'INPUT & RUN scenario', 1: 'LOAD & RUN scenario', 2: 'Exit program.'}
 
