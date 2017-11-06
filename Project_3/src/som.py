@@ -2,9 +2,10 @@ import matplotlib.pyplot as PLT
 import numpy as np
 import miscfunctions as misc
 import time
+import math
 
 class SOM:
-    input = None
+    inputs = None
     weights = None                  # Numpy array of weights between input and output layer
     timeStep = None
     num_outputs = None
@@ -23,29 +24,49 @@ class SOM:
 
 
 
-    def __init__(self, cfunc, problemType = 'TSP', initialWeightRange = (-.1,.1), num_outputs = 10):
+    def __init__(self, problemType = 'TSP', problemArg = 1, initialWeightRange = (0,1), num_outputs = 10, epochs = 200, sigma_0 = 5, tau_sigma = 1, eta_0 = 0.1, tau_eta = 1):
+        self.sigma_0 = sigma_0
+        self.tau_sigma = tau_sigma
+        self.eta_0 = eta_0
+        self.tau_eta = tau_eta
 
         self.initialWeightRange = initialWeightRange
-        self.caseFunction = cfunc
-        self.generate_cases()
         self.problemType = problemType
         if problemType == 'ICP':
             self.num_outputs = num_outputs
         elif problemType == 'TSP':
-            self.num_outputs = len(self.input)      # The number of cities in the problem
+            case_generator = (lambda: misc.generate_tsp_data(problemArg))
+            cMan = Caseman(cfunc=case_generator, cfrac=1.0, vfrac=0.0, tfrac=0.0)
+            self.inputs = cMan.get_training_cases()
+            self.num_outputs = round(2*len(self.inputs))  # The number of cities in the problem
         else:
             raise AssertionError("Unknown problem type " + problemType + ".")
 
         self.timeStep = 0
+        self.epochs = epochs
 
 
-    def generate_cases(self):
-        self.input = self.caseFunction()    # Run the case generator.  Case = input-vector
+
 
     def weight_initialization(self):
         (lower_w, upper_w) = self.initialWeightRange
+        self.weights = np.zeros(shape=(self.num_outputs, len(self.inputs[0])))
+        index = 0
+        range = np.arange(0, 2*math.pi, 2*math.pi/self.num_outputs)
+        for rad in range:
+            x = (math.cos(rad) + 1) / 2
+            y = (math.sin(rad) + 1) / 2
+            self.weights[index, :] = x, y
+            index += 1
+
         # each column represents the weights entering one output neuron
-        self.weights = np.random.uniform(lower_w, upper_w, size=(len(self.input[0]), self.num_outputs))
+        #self.weights = np.random.uniform(lower_w, upper_w, size=(len(self.inputs[0]), self.num_outputs))
+        #self.normalize_weights()
+
+    def normalize_weights(self):
+        for j in range(0, self.num_outputs):
+            w_j = self.weights[j, :]
+            self.weights[j, :] = misc.normalize(w_j)
 
 
     # the discriminant is the squared Euclidean distance between the input vector and the weight vector w_j for each neuron j.
@@ -58,7 +79,7 @@ class SOM:
     def competitive_process(self, input):
         discriminants = []
         for j in range(0, self.num_outputs):
-            w_j = self.weights[:,j]
+            w_j = self.weights[j, :]
             d_j = self.discriminant_function(input, w_j)
             discriminants.append(d_j)
         winner = np.argmin(np.array(discriminants))
@@ -71,7 +92,7 @@ class SOM:
         return T_ji
 
     def neighbourhood_size_function(self):
-        sigma = self.sigma_0*np.exp(-self.timeStep/self.tau_sigma)
+        sigma = self.sigma_0*np.exp(-self.timeStep/self.tau_sigma) + 1
         return sigma
 
     def learning_rate_function(self):
@@ -82,26 +103,47 @@ class SOM:
         if self.problemType == 'TSP':
             # The output is shaped like a ring
             distance = abs(neuron_i - neuron_j)
-            if distance >= len(self.input)/2:
+            if distance >= len(self.inputs)/2:
                 # the calculated distance is not the shortest possible distance
-                distance = len(self.input) - distance
+                distance = len(self.inputs) - distance
             return distance
         elif self.problemType == 'ICP':
             pass
 
-
-    def weight_update(self):
+    def weight_update(self, input, winner):
         eta = self.learning_rate_function()
-        x = self.input[0]
-        winner = self.competitive_process(x)
-        weights_updated = np.zeros(len(self.input[0]), self.num_outputs)
+        weights_updated = np.zeros((self.num_outputs, len(self.inputs[0])))
         for j in range(0, self.num_outputs):
             T_ji = self.topological_neighbourhood_function(winner, j)
-            w_j = self.weights[:,j]
-            delta_w_j = eta*T_ji*(x - w_j)
-            weights_updated[:,j] = w_j + delta_w_j
+            w_j = self.weights[j, :]
+            delta_w_j = eta*T_ji*(input - w_j)
+            weights_updated[j, :] = w_j + delta_w_j
         self.weights = weights_updated
+        #self.normalize_weights()
 
+    def run(self):
+        fig = PLT.figure()
+        PLT.ion()
+        self.weight_initialization()
+
+
+        while self.timeStep <= self.epochs*100:
+            PLT.clf()
+            PLT.title("Epoch: " + str(self.timeStep) + "/" + str(self.epochs) + ". Learning rate: " + str(self.learning_rate_function()) +
+                      ". Neighbourhood: " + str(self.neighbourhood_size_function()))
+            PLT.plot(self.weights[:, 0], self.weights[:, 1], 'bx--')
+            PLT.plot(self.inputs[:, 0], self.inputs[:, 1], 'ro')
+            PLT.show()
+            PLT.pause(0.0001)
+            #time.sleep(100)
+            for i in self.inputs:
+                winner = self.competitive_process(i)
+                self.weight_update(i, winner)
+                self.timeStep += 1
+
+
+        wait = input("ENTER TO QUIT")
+        PLT.ioff()
 
 
 class Caseman():
@@ -158,4 +200,7 @@ class Caseman():
 #
 #     time.sleep(0.1)
 
+testSOM = SOM(problemType = 'TSP', problemArg = 1, initialWeightRange = (0,1),
+              epochs = 1000, sigma_0 = 8, tau_sigma = 2000, eta_0 = 0.5, tau_eta = 7000)
+testSOM.run()
 
