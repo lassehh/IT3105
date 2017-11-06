@@ -1,26 +1,25 @@
 import os
 import glob
 import time
+import som
 from msvcrt import getwch
-from Project_2.src.gannman import *
 
 """
 Class: UI
 """
 class Ui:
     state = None                                                                        # Which menu/submenu the program is currently running
-    gannMan = None                                                                      # A gann manager that manages the user inputs
-    stateDict = {0: 'inputRunScenario', 1: 'loadRunScenario', 2: 'exit'}                # Submenus
+    stateDict = {0: 'solveTSP', 1: 'testMNIST', 2: 'testOTHER'}                         # Submenus
     menuIndexPointer = 0                                                                # The graphical pointer index
 
     # Text/graphical stuff
     pointer = '>>'
     headerText = '### UI - PROJECT 3 DEMO ###\n'
-    initMenuOptions = { 0: 'INPUT & RUN scenario', 1: 'LOAD & RUN scenario', 2: 'Exit program.'}
+    initMenuOptions = { 0: 'Solve TSP with a SOM', 1: 'Test trained SOM on MNIST cases', 2: 'N/A.'
+        , 3: 'Exit program.'}
 
     def __init__(self, state = 'options'):
         self.state = state
-        self.gannMan = GannMan()
 
     # Description: Launches the menu and it's state machine.
     # Input: None
@@ -30,8 +29,9 @@ class Ui:
         exit = False
         while(not exit):
             if(self.state == 'options'): self.options_menu()
-            if(self.state == 'inputRunScenario'): self.input_run_scenario_menu()
-            if(self.state == 'loadRunScenario'): self.load_run_scenario_menu()
+            if(self.state == 'solveTSP'): pass
+            if(self.state == 'testMNIST'): pass
+            if(self.state == 'testOTHER'): pass
             if(self.state == "exit"):
                 exit = True
                 print("\nExiting program..")
