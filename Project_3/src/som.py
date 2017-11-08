@@ -61,7 +61,6 @@ class SOM:
 
         # each column represents the weights entering one output neuron
         #self.weights = np.random.uniform(lower_w, upper_w, size=(len(self.inputs[0]), self.num_outputs))
-        #self.normalize_weights()
 
     def normalize_weights(self):
         for j in range(0, self.num_outputs):
@@ -92,7 +91,9 @@ class SOM:
         return T_ji
 
     def neighbourhood_size_function(self):
-        sigma = self.sigma_0*np.exp(-self.timeStep/self.tau_sigma) + 1
+        sigma = self.sigma_0*np.exp(-self.timeStep/self.tau_sigma)
+        if sigma < 0.9:
+            sigma = 0.9
         return sigma
 
     def learning_rate_function(self):
@@ -103,9 +104,9 @@ class SOM:
         if self.problemType == 'TSP':
             # The output is shaped like a ring
             distance = abs(neuron_i - neuron_j)
-            if distance >= len(self.inputs)/2:
+            if distance >= self.num_outputs/2:
                 # the calculated distance is not the shortest possible distance
-                distance = len(self.inputs) - distance
+                distance = abs(self.num_outputs - distance)
             return distance
         elif self.problemType == 'ICP':
             pass
@@ -119,7 +120,6 @@ class SOM:
             delta_w_j = eta*T_ji*(input - w_j)
             weights_updated[j, :] = w_j + delta_w_j
         self.weights = weights_updated
-        #self.normalize_weights()
 
     def run(self):
         fig = PLT.figure()
@@ -127,19 +127,19 @@ class SOM:
         self.weight_initialization()
 
 
-        while self.timeStep <= self.epochs*100:
+        while self.timeStep <= self.epochs:
             PLT.clf()
             PLT.title("Epoch: " + str(self.timeStep) + "/" + str(self.epochs) + ". Learning rate: " + str(self.learning_rate_function()) +
                       ". Neighbourhood: " + str(self.neighbourhood_size_function()))
             PLT.plot(self.weights[:, 0], self.weights[:, 1], 'bx--')
             PLT.plot(self.inputs[:, 0], self.inputs[:, 1], 'ro')
             PLT.show()
-            PLT.pause(0.0001)
+            PLT.pause(0.001)
             #time.sleep(100)
             for i in self.inputs:
                 winner = self.competitive_process(i)
                 self.weight_update(i, winner)
-                self.timeStep += 1
+            self.timeStep += 1
 
 
         wait = input("ENTER TO QUIT")
@@ -200,7 +200,7 @@ class Caseman():
 #
 #     time.sleep(0.1)
 
-testSOM = SOM(problemType = 'TSP', problemArg = 1, initialWeightRange = (0,1),
-              epochs = 1000, sigma_0 = 8, tau_sigma = 2000, eta_0 = 0.5, tau_eta = 7000)
+testSOM = SOM(problemType = 'TSP', problemArg = 8, initialWeightRange = (0,1),
+              epochs = 300, sigma_0 = 5, tau_sigma = 100, eta_0 = 0.2, tau_eta = 1000)
 testSOM.run()
 
