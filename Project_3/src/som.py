@@ -4,6 +4,9 @@ import miscfunctions as misc
 import time
 import math
 
+# Define constants
+PLOT_INTERVAL = 5
+
 class SOM:
     inputs = None
     weights = None                  # Numpy array of weights between input and output layer
@@ -136,38 +139,97 @@ class SOM:
                 index = int((index + step) % self.num_outputs)
 
 
+    def tsp_plot(self, fig, doblit = True):
+        pass
+        # x, y = rw.next()
+        # points.set_data(x, y)
+        #
+        # if doblit:
+        #     # restore background
+        #     fig.canvas.restore_region(background)
+        #
+        #     # redraw just the points
+        #     ax.draw_artist(points)
+        #
+        #     # fill in the axes rectangle
+        #     fig.canvas.blit(ax.bbox)
+        #
+        # else:
+        #     # redraw everything
+        #     fig.canvas.draw()
+
+        # plt.clf()
+        # plt.title("Epoch: " + str(self.timeStep) + "/" + str(self.epochs) + ". Learning rate: " + str(
+        #     self.learning_rate_function()) +
+        #           ". Neighbourhood: " + str(self.neighbourhood_size_function()))
+        # neuronRingY = np.append(self.weights[:, 0], self.weights[0, 0])
+        # neuronRingX = np.append(self.weights[:, 1], self.weights[0, 1])
+        # ax = fig.gca()
+        # ax.set_xticks(np.arange(0, 1, 0.1))
+        # ax.set_yticks(np.arange(0, 1, 0.1))
+        # plt.plot(neuronRingY, neuronRingX, 'bx--')
+        # plt.pause(0.0001)
+        # plt.plot(self.inputs[:, 0], self.inputs[:, 1], 'g^')
+        # plt.pause(0.0001)
+        # plt.grid(True)
+        # plt.pause(0.0001)
+        # plt.show()
+
     def run(self):
-        fig = PLT.figure()
-        PLT.ion()
+        fig, ax = PLT.subplots(1, 1)
+        ax.set_aspect('equal')
+
+        major_ticks = np.arange(-0.1, 1.1, 0.1)
+        minor_ticks = np.arange(-0.1, 1.1, 0.02)
+
+        ax.set_xticks(major_ticks)
+        ax.set_xticks(minor_ticks, minor=True)
+        ax.set_yticks(major_ticks)
+        ax.set_yticks(minor_ticks, minor=True)
+
+        ax.grid(which='minor', alpha=0.2)
+        ax.grid(which='major', alpha=0.5)
+
+        background = fig.canvas.copy_from_bbox(ax.bbox)
+
         self.weight_initialization()
+        neuronRingY = np.append(self.weights[:, 0], self.weights[0, 0])
+        neuronRingX = np.append(self.weights[:, 1], self.weights[0, 1])
 
+        neurons = ax.plot(neuronRingY, neuronRingX, 'bx--')[0]
+        inputs = ax.plot(self.inputs[:, 0], self.inputs[:, 1], 'g^')
 
-        while self.timeStep <= self.epochs:
-            if self.timeStep % 5 == 0 or self.timeStep == 0:
-                start = time.time()
-                PLT.clf()
-                PLT.title("Epoch: " + str(self.timeStep) + "/" + str(self.epochs) + ". Learning rate: " + str(self.learning_rate_function()) +
-                          ". Neighbourhood: " + str(self.neighbourhood_size_function()))
-                neuronRingY = np.append(self.weights[:, 0], self.weights[0,0])
-                neuronRingX = np.append(self.weights[:, 1], self.weights[0,1])
-                PLT.plot(neuronRingY, neuronRingX, 'bx--')
-                PLT.plot(self.inputs[:, 0], self.inputs[:, 1], 'ro')
-                PLT.show()
-                PLT.pause(0.001)
-                end = time.time()
-                print("Plotting at timestep ", self.timeStep, " took: ", end- start, "s.")
-            #time.sleep(100)
-            start = time.time()
+        for timeStep in range (1, self.epochs + 1):
+            self.timeStep = timeStep
+
+            startTime = time.clock()
             for i in self.inputs:
                 winner = self.competitive_process(i)
                 self.weight_update(i, winner)
-            end = time.time()
-            print("Weight updates at timestep ", self.timeStep, " took: ", end - start, "s.")
-            self.timeStep += 1
+            endTime = time.clock()
+            print("Weight update time: \t", endTime - startTime, "\t[s]")
 
+            if timeStep % PLOT_INTERVAL == 0:
+                startTime = time.clock()
+                neuronRingY = np.append(self.weights[:, 0], self.weights[0, 0])
+                neuronRingX = np.append(self.weights[:, 1], self.weights[0, 1])
+                neurons.set_data(neuronRingY, neuronRingX)
+
+                PLT.pause(0.00001)
+
+                fig.suptitle("Epoch: " + str(self.timeStep) + "/" + str(self.epochs) + ". Learning rate: " + str(
+                    self.learning_rate_function()) +
+                             ". Neighbourhood: " + str(self.neighbourhood_size_function()), fontsize=12)
+                fig.canvas.restore_region(background)
+                ax.draw_artist(neurons)
+                fig.canvas.blit(ax.bbox)
+
+                endTime = time.clock()
+                print("Plot time: \t\t\t\t", endTime - startTime, "\t[s]")
 
         wait = input("ENTER TO QUIT")
-        PLT.ioff()
+        PLT.close(fig)
+        PLT.pause(0.01)
 
 
 class Caseman():
@@ -225,6 +287,6 @@ class Caseman():
 #     time.sleep(0.1)
 
 testSOM = SOM(problemType = 'TSP', problemArg = 1, initialWeightRange = (0,1),
-              epochs = 1000, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
+              epochs = 300, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
 testSOM.run()
 
