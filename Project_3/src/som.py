@@ -5,13 +5,13 @@ import time
 import math
 
 class SOM:
-    inputs = None
+    inputs = None                   # City coordinates, scaled between 0 and 1
     weights = None                  # Numpy array of weights between input and output layer
     timeStep = None
     num_outputs = None
 
-    caseFunction = None
     initialWeightRange = None
+    caseManager = None
 
     # Time constants and, initial neighbour and learning rate values
     sigma_0 = None
@@ -36,8 +36,8 @@ class SOM:
             self.num_outputs = num_outputs
         elif problemType == 'TSP':
             case_generator = (lambda: misc.generate_tsp_data(problemArg))
-            cMan = Caseman(cfunc=case_generator, cfrac=1.0, vfrac=0.0, tfrac=0.0)
-            self.inputs = cMan.get_training_cases()
+            self.caseManager = Caseman(cfunc=case_generator, cfrac=1.0, vfrac=0.0, tfrac=0.0)
+            self.inputs= self.caseManager.get_training_cases()
             self.num_outputs = round(2*len(self.inputs))  # The number of cities in the problem
         else:
             raise AssertionError("Unknown problem type " + problemType + ".")
@@ -137,24 +137,6 @@ class SOM:
                 haLaLo = 0
 
 
-
-        # for j in range(winner+1, self.num_outputs, 1):
-        #     T_ji = self.topological_neighbourhood_function(winner, j)
-        #     if T_ji < 0.0001: break
-        #     else:
-        #         w_j = self.weights[j, :]
-        #         delta_w_j = eta*T_ji*(input - w_j)
-        #         self.weights[j, :] = w_j + delta_w_j
-        #
-        # for j in range(winner-1, 0, -1):
-        #     T_ji = self.topological_neighbourhood_function(winner, j)
-        #     if T_ji < 0.0001: break
-        #     else:
-        #         w_j = self.weights[j, :]
-        #         delta_w_j = eta * T_ji * (input - w_j)
-        #         self.weights[j, :] = w_j + delta_w_j
-        #self.weights = weights_updated
-
     def run(self):
         fig = PLT.figure()
         PLT.ion()
@@ -162,7 +144,7 @@ class SOM:
 
 
         while self.timeStep <= self.epochs:
-            if self.timeStep % 5 == 0 or self.timeStep == 0:
+            if self.timeStep % 20 == 0 or self.timeStep == 0:
                 start = time.time()
                 PLT.clf()
                 PLT.title("Epoch: " + str(self.timeStep) + "/" + str(self.epochs) + ". Learning rate: " + str(self.learning_rate_function()) +
@@ -183,9 +165,54 @@ class SOM:
             print("Weight updates at timestep ", self.timeStep, " took: ", end - start, "s.")
             self.timeStep += 1
 
-
+        path_length = self.calculate_path_length()
         wait = input("ENTER TO QUIT")
         PLT.ioff()
+
+
+    def calculate_path_length(self):
+        distance = 0
+        prev_city = 0
+        first_city = 0
+        visited_cities = set()
+
+
+        city_coordinates = self.caseManager.unnormalized_cases
+
+        fig = PLT.figure()
+        for j in range(0, self.num_outputs):
+            discriminants = []
+            w_j = self.weights[j, :]
+            for input in self.inputs:
+                d_j = self.discriminant_function(input, w_j)
+                discriminants.append(d_j)
+            current_city = np.argmin(np.array(discriminants))
+
+            # The current output neuron "won" input city with index "winner"
+            #Calculate distance between this city and the previous city in the path
+            if current_city not in visited_cities or j == self.num_outputs-1:
+                visited_cities.add(current_city)
+                if j == 0:
+                    distance = 0
+                    prev_city = current_city
+                    first_city = current_city
+                elif j == self.num_outputs - 1:
+                    # Last output neuron reached. Must calculate the distance from the last city to the first
+                    distance += (np.linalg.norm(city_coordinates[current_city, :] - city_coordinates[first_city, :]))
+                else:
+                    distance += (np.linalg.norm(city_coordinates[current_city, :] - city_coordinates[prev_city, :]))
+                    prev_city = current_city
+
+                print("Current path length: ", distance)
+                PLT.title("Current city")
+                PLT.plot(city_coordinates[:, 0], city_coordinates[:, 1], 'ro')
+                PLT.plot(city_coordinates[current_city, 0], city_coordinates[current_city, 1], 'bx')
+
+                PLT.show()
+                PLT.pause(0.001)
+
+        return distance
+
 
 
 class Caseman():
@@ -202,8 +229,14 @@ class Caseman():
         self.cases = self.casefunc()  # Run the case generator.  Case = [input-vector, target-vector]
 
     def organize_cases(self):
-        cases = self.cases
+        cases = self.cases[0]
+        self.unnormalized_cases = self.cases[1]
+
+        state = np.random.get_state()
         np.random.shuffle(cases)  # Randomly shuffle all cases
+        np.random.set_state(state)
+        np.random.shuffle(self.unnormalized_cases)
+
         if self.case_fraction < 1:
             case_separator = round(len(self.cases) * self.case_fraction)
             cases = cases[0:case_separator]  # only use a fraction of the cases
@@ -243,6 +276,6 @@ class Caseman():
 #     time.sleep(0.1)
 
 testSOM = SOM(problemType = 'TSP', problemArg = 1, initialWeightRange = (0,1),
-              epochs = 1000, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
+              epochs = 300, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
 testSOM.run()
 
