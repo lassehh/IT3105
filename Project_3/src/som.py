@@ -134,26 +134,7 @@ class SOM:
 
                 step = (step + step/abs(step))*(-1)
                 index = int((index + step) % self.num_outputs)
-                haLaLo = 0
 
-
-
-        # for j in range(winner+1, self.num_outputs, 1):
-        #     T_ji = self.topological_neighbourhood_function(winner, j)
-        #     if T_ji < 0.0001: break
-        #     else:
-        #         w_j = self.weights[j, :]
-        #         delta_w_j = eta*T_ji*(input - w_j)
-        #         self.weights[j, :] = w_j + delta_w_j
-        #
-        # for j in range(winner-1, 0, -1):
-        #     T_ji = self.topological_neighbourhood_function(winner, j)
-        #     if T_ji < 0.0001: break
-        #     else:
-        #         w_j = self.weights[j, :]
-        #         delta_w_j = eta * T_ji * (input - w_j)
-        #         self.weights[j, :] = w_j + delta_w_j
-        #self.weights = weights_updated
 
     def run(self):
         fig = PLT.figure()
@@ -167,8 +148,9 @@ class SOM:
                 PLT.clf()
                 PLT.title("Epoch: " + str(self.timeStep) + "/" + str(self.epochs) + ". Learning rate: " + str(self.learning_rate_function()) +
                           ". Neighbourhood: " + str(self.neighbourhood_size_function()))
-                #neuronRingY = np.concatenate([])
-                PLT.plot(self.weights[:, 0], self.weights[:, 1], 'bx--')
+                neuronRingY = np.append(self.weights[:, 0], self.weights[0,0])
+                neuronRingX = np.append(self.weights[:, 1], self.weights[0,1])
+                PLT.plot(neuronRingY, neuronRingX, 'bx--')
                 PLT.plot(self.inputs[:, 0], self.inputs[:, 1], 'ro')
                 PLT.show()
                 PLT.pause(0.001)
