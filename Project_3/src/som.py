@@ -24,7 +24,7 @@ class SOM:
 
 
 
-    def __init__(self, problemType = 'TSP', problemArg = 1, initialWeightRange = (0,1), num_outputs = 10, epochs = 200, sigma_0 = 5, tau_sigma = 1, eta_0 = 0.1, tau_eta = 1):
+    def __init__(self, problemType = 'TSP', problemArg = 1, initialWeightRange = (0,1), num_outputs = 10, epochs = 200, sigma_0 = 5.0, tau_sigma = 1, eta_0 = 0.1, tau_eta = 1):
         self.sigma_0 = sigma_0
         self.tau_sigma = tau_sigma
         self.eta_0 = eta_0
@@ -91,9 +91,9 @@ class SOM:
         return T_ji
 
     def neighbourhood_size_function(self):
-        sigma = self.sigma_0*np.exp(-self.timeStep/self.tau_sigma)
-        if sigma < 0.9:
-            sigma = 0.9
+        sigma = (self.sigma_0)*np.exp(-self.timeStep/self.tau_sigma)
+        if sigma < 0.4:
+            sigma = 0.4
         return sigma
 
     def learning_rate_function(self):
@@ -119,21 +119,40 @@ class SOM:
         w_j = self.weights[winner, :]
         delta_w_j = eta * T_ji * (input - w_j)
         self.weights[winner, :] = w_j + delta_w_j
-        for j in range(winner+1, self.num_outputs, 1):
-            T_ji = self.topological_neighbourhood_function(winner, j)
-            if T_ji < 0.0001: break
-            else:
-                w_j = self.weights[j, :]
-                delta_w_j = eta*T_ji*(input - w_j)
-                self.weights[j, :] = w_j + delta_w_j
 
-        for j in range(winner-1, 0, -1):
-            T_ji = self.topological_neighbourhood_function(winner, j)
-            if T_ji < 0.0001: break
+        lowTopFunc = 0
+        step = 1.0
+        index = int(winner + step) % self.num_outputs
+        while lowTopFunc == 0:
+            T_ji = self.topological_neighbourhood_function(winner, index)
+            if T_ji < 0.00001:
+                lowTopFunc = 1
             else:
-                w_j = self.weights[j, :]
+                w_j = self.weights[index, :]
                 delta_w_j = eta * T_ji * (input - w_j)
-                self.weights[j, :] = w_j + delta_w_j
+                self.weights[index, :] = w_j + delta_w_j
+
+                step = (step + step/abs(step))*(-1)
+                index = int((index + step) % self.num_outputs)
+                haLaLo = 0
+
+
+
+        # for j in range(winner+1, self.num_outputs, 1):
+        #     T_ji = self.topological_neighbourhood_function(winner, j)
+        #     if T_ji < 0.0001: break
+        #     else:
+        #         w_j = self.weights[j, :]
+        #         delta_w_j = eta*T_ji*(input - w_j)
+        #         self.weights[j, :] = w_j + delta_w_j
+        #
+        # for j in range(winner-1, 0, -1):
+        #     T_ji = self.topological_neighbourhood_function(winner, j)
+        #     if T_ji < 0.0001: break
+        #     else:
+        #         w_j = self.weights[j, :]
+        #         delta_w_j = eta * T_ji * (input - w_j)
+        #         self.weights[j, :] = w_j + delta_w_j
         #self.weights = weights_updated
 
     def run(self):
@@ -143,11 +162,12 @@ class SOM:
 
 
         while self.timeStep <= self.epochs:
-            if self.timeStep % 20 == 0 or self.timeStep == 0:
+            if self.timeStep % 5 == 0 or self.timeStep == 0:
                 start = time.time()
                 PLT.clf()
                 PLT.title("Epoch: " + str(self.timeStep) + "/" + str(self.epochs) + ". Learning rate: " + str(self.learning_rate_function()) +
                           ". Neighbourhood: " + str(self.neighbourhood_size_function()))
+                #neuronRingY = np.concatenate([])
                 PLT.plot(self.weights[:, 0], self.weights[:, 1], 'bx--')
                 PLT.plot(self.inputs[:, 0], self.inputs[:, 1], 'ro')
                 PLT.show()
@@ -222,7 +242,7 @@ class Caseman():
 #
 #     time.sleep(0.1)
 
-testSOM = SOM(problemType = 'TSP', problemArg = 8, initialWeightRange = (0,1),
-              epochs = 300, sigma_0 = 5, tau_sigma = 100, eta_0 = 0.2, tau_eta = 1000)
+testSOM = SOM(problemType = 'TSP', problemArg = 1, initialWeightRange = (0,1),
+              epochs = 1000, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
 testSOM.run()
 
