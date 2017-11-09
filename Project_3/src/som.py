@@ -60,7 +60,7 @@ class SOM:
             index += 1
 
         # each column represents the weights entering one output neuron
-        #self.weights = np.random.uniform(lower_w, upper_w, size=(len(self.inputs[0]), self.num_outputs))
+        #self.weights = np.random.uniform(lower_w, upper_w, size=(self.num_outputs, len(self.inputs[0])))
 
     def normalize_weights(self):
         for j in range(0, self.num_outputs):
@@ -114,12 +114,27 @@ class SOM:
     def weight_update(self, input, winner):
         eta = self.learning_rate_function()
         weights_updated = np.zeros((self.num_outputs, len(self.inputs[0])))
-        for j in range(0, self.num_outputs):
+
+        T_ji = self.topological_neighbourhood_function(winner, winner)
+        w_j = self.weights[winner, :]
+        delta_w_j = eta * T_ji * (input - w_j)
+        self.weights[winner, :] = w_j + delta_w_j
+        for j in range(winner+1, self.num_outputs, 1):
             T_ji = self.topological_neighbourhood_function(winner, j)
-            w_j = self.weights[j, :]
-            delta_w_j = eta*T_ji*(input - w_j)
-            weights_updated[j, :] = w_j + delta_w_j
-        self.weights = weights_updated
+            if T_ji < 0.0001: break
+            else:
+                w_j = self.weights[j, :]
+                delta_w_j = eta*T_ji*(input - w_j)
+                self.weights[j, :] = w_j + delta_w_j
+
+        for j in range(winner-1, 0, -1):
+            T_ji = self.topological_neighbourhood_function(winner, j)
+            if T_ji < 0.0001: break
+            else:
+                w_j = self.weights[j, :]
+                delta_w_j = eta * T_ji * (input - w_j)
+                self.weights[j, :] = w_j + delta_w_j
+        #self.weights = weights_updated
 
     def run(self):
         fig = PLT.figure()
@@ -128,17 +143,24 @@ class SOM:
 
 
         while self.timeStep <= self.epochs:
-            PLT.clf()
-            PLT.title("Epoch: " + str(self.timeStep) + "/" + str(self.epochs) + ". Learning rate: " + str(self.learning_rate_function()) +
-                      ". Neighbourhood: " + str(self.neighbourhood_size_function()))
-            PLT.plot(self.weights[:, 0], self.weights[:, 1], 'bx--')
-            PLT.plot(self.inputs[:, 0], self.inputs[:, 1], 'ro')
-            PLT.show()
-            PLT.pause(0.001)
+            if self.timeStep % 20 == 0 or self.timeStep == 0:
+                start = time.time()
+                PLT.clf()
+                PLT.title("Epoch: " + str(self.timeStep) + "/" + str(self.epochs) + ". Learning rate: " + str(self.learning_rate_function()) +
+                          ". Neighbourhood: " + str(self.neighbourhood_size_function()))
+                PLT.plot(self.weights[:, 0], self.weights[:, 1], 'bx--')
+                PLT.plot(self.inputs[:, 0], self.inputs[:, 1], 'ro')
+                PLT.show()
+                PLT.pause(0.001)
+                end = time.time()
+                print("Plotting at timestep ", self.timeStep, " took: ", end- start, "s.")
             #time.sleep(100)
+            start = time.time()
             for i in self.inputs:
                 winner = self.competitive_process(i)
                 self.weight_update(i, winner)
+            end = time.time()
+            print("Weight updates at timestep ", self.timeStep, " took: ", end - start, "s.")
             self.timeStep += 1
 
 
