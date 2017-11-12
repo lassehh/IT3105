@@ -25,6 +25,8 @@ class SOM:
     # TSP or image classification problem (ICP)
     problemType = None
 
+    discriminantsStorage = None
+
 
 
     def __init__(self, problemType = 'TSP', problemArg = 1, initialWeightRange = (0,1), num_outputs = 10, epochs = 200, sigma_0 = 5.0, tau_sigma = 1, eta_0 = 0.1, tau_eta = 1):
@@ -48,6 +50,7 @@ class SOM:
         else:
             raise AssertionError("Unknown problem type " + problemType + ".")
 
+        self.discriminantsStorage = [None] * self.num_outputs
         self.timeStep = 0
         self.epochs = epochs
 
@@ -77,24 +80,20 @@ class SOM:
     # for each input pattern, each neuron j computes the value of the discriminant function
     # the neuron with the smallest discriminant wins
     def competitive_process(self, input):
-        discriminants = []
         for j in range(0, self.numOutputs):
             w_j = self.weights[j, :]
             d_j = self.discriminant_function(input, w_j)
-            discriminants.append(d_j)
-        winner = np.argmin(np.array(discriminants))
+            self.discriminantsStorage[j] = d_j
+        winner = np.argmin(np.array(self.discriminantsStorage))
         return winner
 
-    def topological_neighbourhood_function(self, winner, neuron_j):
+    def topological_neighbourhood_function(self, sigma, winner, neuron_j):
         S_ji = self.manhattan_distance(winner, neuron_j)
-        sigma = self.neighbourhood_size_function()
         T_ji = np.exp(-(S_ji**2)/(2*(sigma**2)))
         return T_ji
 
     def neighbourhood_size_function(self):
         sigma = (self.sigma_0)*np.exp(-self.timeStep/self.tau_sigma)
-        if sigma < 0.4:
-            sigma = 0.4
         return sigma
 
     def learning_rate_function(self):
@@ -112,10 +111,8 @@ class SOM:
         elif self.problemType == 'ICP':
             pass
 
-    def weight_update(self, input, winner):
-        eta = self.learning_rate_function()
-
-        T_ji = self.topological_neighbourhood_function(winner, winner)
+    def weight_update(self, sigma, eta, input, winner):
+        T_ji = self.topological_neighbourhood_function(sigma, winner, winner)
         w_j = self.weights[winner, :]
         delta_w_j = eta * T_ji * (input - w_j)
         self.weights[winner, :] = w_j + delta_w_j
@@ -124,71 +121,45 @@ class SOM:
         step = 1.0
         index = int(winner + step) % self.numOutputs
         while lowTopFunc == 0:
-            T_ji = self.topological_neighbourhood_function(winner, index)
-            if T_ji < 0.00001:
+            T_ji = self.topological_neighbourhood_function(sigma, winner, index)
+            if T_ji < 0.001:
                 lowTopFunc = 1
             else:
-                w_j = self.weights[index, :]
-                delta_w_j = eta * T_ji * (input - w_j)
-                self.weights[index, :] = w_j + delta_w_j
+                if self.problemType == "TCP":
+                    w_j = self.weights[index, :]
+                    delta_w_j = eta * T_ji * (input - w_j)
+                    self.weights[index, :] = w_j + delta_w_j
 
-                step = (step + step/abs(step))*(-1)
-                index = int((index + step) % self.numOutputs)
-
+                    step = (step + step/abs(step))*(-1)
+                    index = int((index + step) % self.num_outputs)
+                elif self.problemType == "ICP":
+                    pass
 
     def run(self):
-        fig, ax = PLT.subplots(1, 1)
-        ax.set_aspect('equal')
-
-        major_ticks = np.arange(-0.1, 1.1, 0.1)
-        minor_ticks = np.arange(-0.1, 1.1, 0.02)
-
-        ax.set_xticks(major_ticks)
-        ax.set_xticks(minor_ticks, minor=True)
-        ax.set_yticks(major_ticks)
-        ax.set_yticks(minor_ticks, minor=True)
-
-        ax.grid(which='minor', alpha=0.2)
-        ax.grid(which='major', alpha=0.5)
-
-        background = fig.canvas.copy_from_bbox(ax.bbox)
-
         self.weight_initialization()
-        neuronRingY = np.append(self.weights[:, 0], self.weights[0, 0])
-        neuronRingX = np.append(self.weights[:, 1], self.weights[0, 1])
 
-        neurons = ax.plot(neuronRingY, neuronRingX, 'bx--')[0]
-        inputs = ax.plot(self.inputs[:, 0], self.inputs[:, 1], 'g^')
+        fig, ax, background, weightPts, inputPts = misc.create_tsp_plot(self.weights, self.inputs)
 
-        for timeStep in range (1, self.epochs + 1):
+        for timeStep in range (0, self.epochs + 1):
             self.timeStep = timeStep
-
             startTime = time.clock()
+            eta = self.learning_rate_function()
+            sigma = self.neighbourhood_size_function()
             for i in self.inputs:
                 winner = self.competitive_process(i)
-                self.weight_update(i, winner)
+                self.weight_update(eta = eta, sigma = sigma , input = i, winner = winner)
             endTime = time.clock()
             print("Weight update time: \t", endTime - startTime, "\t[s]")
 
             if timeStep % PLOT_INTERVAL == 0:
                 startTime = time.clock()
-                neuronRingY = np.append(self.weights[:, 0], self.weights[0, 0])
-                neuronRingX = np.append(self.weights[:, 1], self.weights[0, 1])
-                neurons.set_data(neuronRingY, neuronRingX)
-
-                PLT.pause(0.00001)
-
-                fig.suptitle("Epoch: " + str(self.timeStep) + "/" + str(self.epochs) + ". Learning rate: " + str(
-                    self.learning_rate_function()) +
-                             ". Neighbourhood: " + str(self.neighbourhood_size_function()), fontsize=12)
-                #fig.canvas.restore_region(background)
-                ax.draw_artist(neurons)
-                #fig.canvas.blit(ax.bbox)
-
+                misc.update_tsp_plot(fig, ax, background, self.weights, weightPts,
+                                     self.learning_rate_function(), timeStep, self.epochs,
+                                    self.neighbourhood_size_function())
                 endTime = time.clock()
                 print("Plot time: \t\t\t\t", endTime - startTime, "\t[s]")
 
-        path_length = self.calculate_path_length()
+        #path_length = self.calculate_path_length()
         wait = input("ENTER TO QUIT")
         PLT.ioff()
         #PLT.close(fig)
@@ -239,8 +210,6 @@ class SOM:
 
         return distance
 
-
-
 class Caseman():
     def __init__(self, cfunc, cfrac = .8, vfrac = 0.1, tfrac = .1):
         self.casefunc = cfunc  # Function used to generate all data cases from a dataset
@@ -276,28 +245,7 @@ class Caseman():
     def get_testing_cases(self): return self.testing_cases
 
 
-# print("Trying some dumb shit: ")
-# dummySOM = SOM()
-# timeSteps = 10000
-# dummy_points_x = [1,2,3]
-# dummy_points_y = [1,2,3]
-#
-# fig = PLT.figure()
-# PLT.axis([0,10,0,1])
-# PLT.ion()
-# for step in range(0, timeSteps):
-#     dummy_points_x[0] += 0.1
-#     dummy_points_y[0] += 0.1
-#     dummy_points_x[1] += 0.1
-#     dummy_points_y[1] -= 0.1
-#     PLT.clf()
-#     PLT.plot(dummy_points_x, dummy_points_y)
-#     PLT.show()
-#     PLT.pause(0.0001)
-#
-#     time.sleep(0.1)
-
-testSOM = SOM(problemType = 'TSP', problemArg = 1, initialWeightRange = (0,1),
-              epochs = 300, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
+testSOM = SOM(problemType = 'TSP', problemArg = 2, initialWeightRange = (0,1),
+              epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
 testSOM.run()
 

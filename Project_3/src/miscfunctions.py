@@ -1,4 +1,6 @@
 import numpy as np
+import math
+import matplotlib.pyplot as PLT
 import copy
 from tensorflow.examples.tutorials.mnist import input_data
 
@@ -37,6 +39,45 @@ def generate_tsp_data(problemNumbr):
         cities[:, 0] = (cities[:, 0] - min_x) / (max_x - min_x)
         cities[:, 1] = (cities[:, 1] - min_y) / (max_y - min_y)
     return cities, cities_true_coordinates
+
+def create_tsp_plot(weights, inputs):
+    fig, ax = PLT.subplots(1,1)
+    ax.set_aspect('equal')
+
+    major_ticks = np.arange(-0.1, 1.1, 0.1)
+    minor_ticks = np.arange(-0.1, 1.1, 0.02)
+
+    ax.set_xticks(major_ticks)
+    ax.set_xticks(minor_ticks, minor=True)
+    ax.set_yticks(major_ticks)
+    ax.set_yticks(minor_ticks, minor=True)
+
+    ax.grid(which='minor', alpha=0.2)
+    ax.grid(which='major', alpha=0.5)
+
+    background = fig.canvas.copy_from_bbox(ax.bbox)
+
+    neuronRingY = np.append(weights[:, 0], weights[0, 0])
+    neuronRingX = np.append(weights[:, 1], weights[0, 1])
+
+
+    inputPts = ax.plot(inputs[:, 0], inputs[:, 1], 'g^')
+    weightPts = ax.plot(neuronRingY, neuronRingX, 'bx--')[0]
+    PLT.pause(0.00001)
+
+    return fig, ax, background, weightPts, inputPts
+
+def update_tsp_plot(fig, ax, background, weights, weightPts,
+                    learningRate, timeStep, epochs, neighbourhood):
+    neuronRingY = np.append(weights[:, 0], weights[0, 0])
+    neuronRingX = np.append(weights[:, 1], weights[0, 1])
+    weightPts.set_data(neuronRingY, neuronRingX)
+
+    fig.suptitle("Epoch: " + str(timeStep) + "/" + str(epochs) + ". Learning rate: " + str(
+        learningRate) + ". Neighbourhood: " + str(neighbourhood), fontsize=12)
+    ax.draw_artist(weightPts)
+
+    PLT.pause(0.00001)
 
 def normalize(v):
     norm = np.linalg.norm(v)
