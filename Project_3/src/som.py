@@ -29,7 +29,7 @@ class SOM:
 
 
 
-    def __init__(self, problemType = 'TSP', problemArg = 1, initialWeightRange = (0,1), num_outputs = 10, epochs = 200, sigma_0 = 5.0, tau_sigma = 1, eta_0 = 0.1, tau_eta = 1):
+    def __init__(self, problemType = 'TSP', problemArg = 1, initialWeightRange = (0,1), numOutputs = 10, epochs = 200, sigma_0 = 5.0, tau_sigma = 1, eta_0 = 0.1, tau_eta = 1):
         self.sigma_0 = sigma_0
         self.tau_sigma = tau_sigma
         self.eta_0 = eta_0
@@ -41,7 +41,7 @@ class SOM:
             case_generator = (lambda: misc.generate_mnist_data())
             self.caseManager = Caseman(cfunc=case_generator, cfrac=0.05, vfrac=0.0, tfrac=0.05)
             self.inputs = self.caseManager.get_training_cases()
-            self.numOutputs = num_outputs
+            self.numOutputs = numOutputs
         elif problemType == 'TSP':
             case_generator = (lambda: misc.generate_tsp_data(problemArg))
             self.caseManager = Caseman(cfunc=case_generator, cfrac=1.0, vfrac=0.0, tfrac=0.0)
@@ -50,7 +50,7 @@ class SOM:
         else:
             raise AssertionError("Unknown problem type " + problemType + ".")
 
-        self.discriminantsStorage = [None] * self.num_outputs
+        self.discriminantsStorage = [None] * self.numOutputs
         self.timeStep = 0
         self.epochs = epochs
 
@@ -117,21 +117,20 @@ class SOM:
         delta_w_j = eta * T_ji * (input - w_j)
         self.weights[winner, :] = w_j + delta_w_j
 
-        lowTopFunc = 0
         step = 1.0
         index = int(winner + step) % self.numOutputs
-        while lowTopFunc == 0:
+        while(1):
             T_ji = self.topological_neighbourhood_function(sigma, winner, index)
             if T_ji < 0.001:
-                lowTopFunc = 1
+                break
             else:
-                if self.problemType == "TCP":
+                if self.problemType == "TSP":
                     w_j = self.weights[index, :]
                     delta_w_j = eta * T_ji * (input - w_j)
                     self.weights[index, :] = w_j + delta_w_j
 
                     step = (step + step/abs(step))*(-1)
-                    index = int((index + step) % self.num_outputs)
+                    index = int((index + step) % self.numOutputs)
                 elif self.problemType == "ICP":
                     pass
 
