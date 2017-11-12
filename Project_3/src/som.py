@@ -11,7 +11,7 @@ class SOM:
     inputs = None                   # City coordinates, scaled between 0 and 1
     weights = None                  # Numpy array of weights between input and output layer
     timeStep = None
-    num_outputs = None
+    numOutputs = None
 
     initialWeightRange = None
     caseManager = None
@@ -36,12 +36,15 @@ class SOM:
         self.initialWeightRange = initialWeightRange
         self.problemType = problemType
         if problemType == 'ICP':
-            self.num_outputs = num_outputs
+            case_generator = (lambda: misc.generate_mnist_data())
+            self.caseManager = Caseman(cfunc=case_generator, cfrac=0.05, vfrac=0.0, tfrac=0.05)
+            self.inputs = self.caseManager.get_training_cases()
+            self.numOutputs = num_outputs
         elif problemType == 'TSP':
             case_generator = (lambda: misc.generate_tsp_data(problemArg))
             self.caseManager = Caseman(cfunc=case_generator, cfrac=1.0, vfrac=0.0, tfrac=0.0)
-            self.inputs= self.caseManager.get_training_cases()
-            self.num_outputs = round(2*len(self.inputs))  # The number of cities in the problem
+            self.inputs = self.caseManager.get_training_cases()
+            self.numOutputs = round(2 * len(self.inputs))  # The number of cities in the problem
         else:
             raise AssertionError("Unknown problem type " + problemType + ".")
 
@@ -53,9 +56,9 @@ class SOM:
 
     def weight_initialization(self):
         (lower_w, upper_w) = self.initialWeightRange
-        self.weights = np.zeros(shape=(self.num_outputs, len(self.inputs[0])))
+        self.weights = np.zeros(shape=(self.numOutputs, len(self.inputs[0])))
         index = 0
-        range = np.arange(0, 2*math.pi, 2*math.pi/self.num_outputs)
+        range = np.arange(0, 2 * math.pi, 2 * math.pi / self.numOutputs)
         for rad in range:
             x = (math.cos(rad) + 1) / 2
             y = (math.sin(rad) + 1) / 2
@@ -64,11 +67,6 @@ class SOM:
 
         # each column represents the weights entering one output neuron
         #self.weights = np.random.uniform(lower_w, upper_w, size=(self.num_outputs, len(self.inputs[0])))
-
-    def normalize_weights(self):
-        for j in range(0, self.num_outputs):
-            w_j = self.weights[j, :]
-            self.weights[j, :] = misc.normalize(w_j)
 
 
     # the discriminant is the squared Euclidean distance between the input vector and the weight vector w_j for each neuron j.
@@ -80,7 +78,7 @@ class SOM:
     # the neuron with the smallest discriminant wins
     def competitive_process(self, input):
         discriminants = []
-        for j in range(0, self.num_outputs):
+        for j in range(0, self.numOutputs):
             w_j = self.weights[j, :]
             d_j = self.discriminant_function(input, w_j)
             discriminants.append(d_j)
@@ -107,16 +105,15 @@ class SOM:
         if self.problemType == 'TSP':
             # The output is shaped like a ring
             distance = abs(neuron_i - neuron_j)
-            if distance >= self.num_outputs/2:
+            if distance >= self.numOutputs/2:
                 # the calculated distance is not the shortest possible distance
-                distance = abs(self.num_outputs - distance)
+                distance = abs(self.numOutputs - distance)
             return distance
         elif self.problemType == 'ICP':
             pass
 
     def weight_update(self, input, winner):
         eta = self.learning_rate_function()
-        weights_updated = np.zeros((self.num_outputs, len(self.inputs[0])))
 
         T_ji = self.topological_neighbourhood_function(winner, winner)
         w_j = self.weights[winner, :]
@@ -125,7 +122,7 @@ class SOM:
 
         lowTopFunc = 0
         step = 1.0
-        index = int(winner + step) % self.num_outputs
+        index = int(winner + step) % self.numOutputs
         while lowTopFunc == 0:
             T_ji = self.topological_neighbourhood_function(winner, index)
             if T_ji < 0.00001:
@@ -136,7 +133,7 @@ class SOM:
                 self.weights[index, :] = w_j + delta_w_j
 
                 step = (step + step/abs(step))*(-1)
-                index = int((index + step) % self.num_outputs)
+                index = int((index + step) % self.numOutputs)
 
 
     def run(self):
@@ -184,71 +181,73 @@ class SOM:
                 fig.suptitle("Epoch: " + str(self.timeStep) + "/" + str(self.epochs) + ". Learning rate: " + str(
                     self.learning_rate_function()) +
                              ". Neighbourhood: " + str(self.neighbourhood_size_function()), fontsize=12)
-                fig.canvas.restore_region(background)
+                #fig.canvas.restore_region(background)
                 ax.draw_artist(neurons)
-                fig.canvas.blit(ax.bbox)
+                #fig.canvas.blit(ax.bbox)
 
                 endTime = time.clock()
                 print("Plot time: \t\t\t\t", endTime - startTime, "\t[s]")
 
         path_length = self.calculate_path_length()
         wait = input("ENTER TO QUIT")
-        PLT.close(fig)
+        PLT.ioff()
+        #PLT.close(fig)
         PLT.pause(0.01)
 
 
     def calculate_path_length(self):
         distance = 0
-        prev_city = 0
-        first_city = 0
-        visited_cities = set()
+        prevCity = 0
+        firstCity = 0
+        visitedCities = set()
+        cityCoordinates = self.caseManager.unnormalized_cases
 
-
-        city_coordinates = self.caseManager.unnormalized_cases
-
-        fig = PLT.figure()
-        for j in range(0, self.num_outputs):
+        # fig = PLT.figure()
+        for j in range(0, self.numOutputs):
             discriminants = []
             w_j = self.weights[j, :]
             for input in self.inputs:
                 d_j = self.discriminant_function(input, w_j)
                 discriminants.append(d_j)
-            current_city = np.argmin(np.array(discriminants))
+            currentCity = np.argmin(np.array(discriminants))
 
-            # The current output neuron "won" input city with index "winner"
-            #Calculate distance between this city and the previous city in the path
-            if current_city not in visited_cities or j == self.num_outputs-1:
-                visited_cities.add(current_city)
+            # The current output neuron "won" input city with index "currentCity"
+            # Calculate distance between this city and the previous city in the path
+            if currentCity not in visitedCities or j == self.numOutputs-1:
+                visitedCities.add(currentCity)
                 if j == 0:
                     distance = 0
-                    prev_city = current_city
-                    first_city = current_city
-                elif j == self.num_outputs - 1:
+                    prevCity = currentCity
+                    firstCity = currentCity
+                elif j == self.numOutputs - 1:
                     # Last output neuron reached. Must calculate the distance from the last city to the first
-                    distance += (np.linalg.norm(city_coordinates[current_city, :] - city_coordinates[first_city, :]))
+                    if firstCity == currentCity:  # the last output neuron lies between the first and last city
+                        distance += (np.linalg.norm(cityCoordinates[prevCity, :] - cityCoordinates[firstCity, :]))
+                    else:
+                        distance += (np.linalg.norm(cityCoordinates[currentCity, :] - cityCoordinates[firstCity, :]))
                 else:
-                    distance += (np.linalg.norm(city_coordinates[current_city, :] - city_coordinates[prev_city, :]))
-                    prev_city = current_city
+                    distance += (np.linalg.norm(cityCoordinates[currentCity, :] - cityCoordinates[prevCity, :]))
+                    prevCity = currentCity
 
                 print("Current path length: ", distance)
-                PLT.title("Current city")
-                PLT.plot(city_coordinates[:, 0], city_coordinates[:, 1], 'ro')
-                PLT.plot(city_coordinates[current_city, 0], city_coordinates[current_city, 1], 'bx')
-
-                PLT.show()
-                PLT.pause(0.001)
+                # PLT.title("Current city")
+                # PLT.plot(cityCoordinates[:, 0], cityCoordinates[:, 1], 'ro')
+                # PLT.plot(cityCoordinates[currentCity, 0], cityCoordinates[currentCity, 1], 'bx')
+                #
+                # PLT.show()
+                # PLT.pause(0.001)
 
         return distance
 
 
 
 class Caseman():
-    def __init__(self, cfunc, cfrac = .8, vfrac = .1, tfrac = .1):
+    def __init__(self, cfunc, cfrac = .8, vfrac = 0.1, tfrac = .1):
         self.casefunc = cfunc  # Function used to generate all data cases from a dataset
         self.case_fraction = cfrac  # What fraction of the total data cases to use
-        self.validation_fraction = vfrac  # What fraction of the data to use for validation
+        # self.validation_fraction = vfrac  # What fraction of the data to use for validation
         self.test_fraction = tfrac  # What fraction of the data to use for final testing
-        self.training_fraction = 1 - (vfrac + tfrac)
+        self.training_fraction = cfrac # 1 - (tfrac)
         self.generate_cases()
         self.organize_cases()
 
@@ -269,14 +268,10 @@ class Caseman():
             cases = cases[0:case_separator]  # only use a fraction of the cases
 
         training_separator = round(len(cases) * self.training_fraction)
-        validation_separator = training_separator + round(len(cases) * self.validation_fraction)
         self.training_cases = cases[0:training_separator]
-        self.validation_cases = cases[training_separator:validation_separator]
-        self.testing_cases = cases[validation_separator:]
+        self.testing_cases = cases[training_separator:]
 
     def get_training_cases(self): return self.training_cases
-
-    def get_validation_cases(self): return self.validation_cases
 
     def get_testing_cases(self): return self.testing_cases
 

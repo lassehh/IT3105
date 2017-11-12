@@ -1,5 +1,8 @@
 import numpy as np
 import copy
+from tensorflow.examples.tutorials.mnist import input_data
+
+
 
 
 def generate_tsp_data(problemNumbr):
@@ -40,3 +43,15 @@ def normalize(v):
     if norm == 0:
         return v
     return v/norm
+
+def generate_mnist_data():
+    data_dir = '../data/mnist'
+    mnist = input_data.read_data_sets(data_dir, one_hot=False)
+    trainingSet = mnist.train
+    lol = 0
+    transpose = trainingSet.labels.T
+    # a = np.concatenate((trainingSet.images, (trainingSet.labels).T), axis = 1)
+    return trainingSet
+
+
+# generate_mnist_data()
