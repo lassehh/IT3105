@@ -58,18 +58,18 @@ class SOM:
 
 
     def weight_initialization(self):
-        (lower_w, upper_w) = self.initialWeightRange
         self.weights = np.zeros(shape=(self.numOutputs, len(self.inputs[0])))
-        index = 0
-        range = np.arange(0, 2 * math.pi, 2 * math.pi / self.numOutputs)
-        for rad in range:
-            x = (math.cos(rad) + 1) / 2
-            y = (math.sin(rad) + 1) / 2
-            self.weights[index, :] = x, y
-            index += 1
-
-        # each column represents the weights entering one output neuron
-        #self.weights = np.random.uniform(lower_w, upper_w, size=(self.num_outputs, len(self.inputs[0])))
+        if self.problemType == "TSP":
+            index = 0
+            range = np.arange(0, 2 * math.pi, 2 * math.pi / self.numOutputs)
+            for rad in range:
+                x = (math.cos(rad) + 1) / 2
+                y = (math.sin(rad) + 1) / 2
+                self.weights[index, :] = x, y
+                index += 1
+        elif self.problemType == "ICP":
+            (lower_w, upper_w) = self.initialWeightRange
+            self.weights = np.random.uniform(lower_w, upper_w, size=(self.numOutputs, len(self.inputs[0])))
 
 
     # the discriminant is the squared Euclidean distance between the input vector and the weight vector w_j for each neuron j.
