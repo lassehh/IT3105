@@ -30,7 +30,7 @@ class SOM:
 
 
 
-    def __init__(self, problemType = 'TSP', problemArg = 1, initialWeightRange = (0,1), num_outputs = 10, epochs = 200, sigma_0 = 5.0, tau_sigma = 1, eta_0 = 0.1, tau_eta = 1):
+    def __init__(self, problemType = 'TSP', problemArg = 1, initialWeightRange = (0,1), numOutputs = 10, epochs = 200, sigma_0 = 5.0, tau_sigma = 1, eta_0 = 0.1, tau_eta = 1):
         self.sigma_0 = sigma_0
         self.tau_sigma = tau_sigma
         self.eta_0 = eta_0
@@ -121,7 +121,6 @@ class SOM:
         delta_w_j = eta * T_ji * (input - w_j)
         self.weights[winner, :] = w_j + delta_w_j
 
-        lowTopFunc = 0
         step = 1.0
         index = int(winner + step) % self.numOutputs
         while(1):

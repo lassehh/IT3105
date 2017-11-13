@@ -1,9 +1,14 @@
 import numpy as np
 import math
-import matplotlib.pyplot as PLT
+import matplotlib.pyplot as plt
+import networkx as nx
 import copy
+import random
+import time
 from tensorflow.examples.tutorials.mnist import input_data
 
+labelColorDict = {0: 'b', 1: 'g', 2: 'y', 3: 'r', 4: 'pink', 5: 'm', 6:
+                  'cyan', 7: 'grey', 8: 'black', 9: 'orange'}
 
 
 
@@ -41,7 +46,7 @@ def generate_tsp_data(problemNumbr):
     return cities, cities_true_coordinates
 
 def create_tsp_plot(weights, inputs):
-    fig, ax = PLT.subplots(1,1)
+    fig, ax = plt.subplots(1, 1)
     ax.set_aspect('equal')
 
     major_ticks = np.arange(-0.1, 1.1, 0.1)
@@ -63,7 +68,7 @@ def create_tsp_plot(weights, inputs):
 
     inputPts = ax.plot(inputs[:, 0], inputs[:, 1], 'g^')
     weightPts = ax.plot(neuronRingY, neuronRingX, 'bx--')[0]
-    PLT.pause(0.00001)
+    plt.pause(0.00001)
 
     return fig, ax, background, weightPts, inputPts
 
@@ -77,7 +82,28 @@ def update_tsp_plot(fig, ax, background, weights, weightPts,
         learningRate) + ". Neighbourhood: " + str(neighbourhood), fontsize=12)
     ax.draw_artist(weightPts)
 
-    PLT.pause(0.00001)
+    plt.pause(0.00001)
+
+def draw_image_classification_graph(gridSize = 10, numberOfLabels = 9):
+    start = time.clock()
+    G = nx.grid_2d_graph(gridSize, gridSize)
+    pos = dict((n, n) for n in G.nodes())
+
+    for node in G:
+        labelNumber = round(random.random()*numberOfLabels)
+        labelColor = labelColorDict[labelNumber]
+        nx.draw_networkx_nodes(G, pos,
+                               nodelist=[node],
+                               node_color=labelColor,
+                               node_size=600,
+                               alpha=0.8)
+
+    nx.draw_networkx_edges(G, pos, width=1.0, alpha=0.5)
+    end = time.clock()
+    print("Graph plotting time : ", end-start)
+    plt.axis('off')
+    plt.show()
+
 
 def normalize(v):
     norm = np.linalg.norm(v)
@@ -93,5 +119,5 @@ def generate_mnist_data():
     concatenated = np.concatenate((trainingSet.images, labels.T), axis = 1)
     return concatenated, concatenated
 
-
-generate_mnist_data()
+draw_image_classification_graph()
+# generate_mnist_data()
