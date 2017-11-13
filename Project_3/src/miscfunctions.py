@@ -123,6 +123,20 @@ def index_list_2_grid(index, gridSize):
         if(x >= gridSize): return AttributeError("Cannot convert index to x,y coordinates.")
     return (x,y)
 
+def find_2d_four_way_neighbours(coordinates, gridSize):
+    x, y = coordinates
+    neighbours = []
+    if(x + 1 < gridSize):
+        neighbours.append((x + 1, y))
+    if(x - 1 >= 0):
+        neighbours.append((x - 1, y))
+    if (y + 1 < gridSize):
+        neighbours.append((x, y + 1))
+    if (y - 1 >= 0):
+        neighbours.append((x, y - 1))
+    return neighbours
+
+
 def generate_mnist_data():
     data_dir = '../data/mnist'
     mnist = input_data.read_data_sets(data_dir, one_hot=False)

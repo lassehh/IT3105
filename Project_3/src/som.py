@@ -41,7 +41,7 @@ class SOM:
         self.problemType = problemType
         if problemType == 'ICP':
             case_generator = (lambda: misc.generate_mnist_data())
-            self.caseManager = Caseman(cfunc=case_generator, cfrac=0.05, tfrac=0.05)
+            self.caseManager = Caseman(cfunc=case_generator, cfrac=0.01, tfrac=0.05)
             self.inputs = self.caseManager.get_training_cases()
             self.input_labels = self.inputs[:, -1]
             self.inputs = self.inputs[:, :-1]
@@ -119,27 +119,50 @@ class SOM:
             return (abs(gridIndexNi[0] - gridIndexNj[0]) + abs(gridIndexNi[1] - gridIndexNj[1]))
 
     def weight_update(self, sigma, eta, input, winner):
-        T_ji = self.topological_neighbourhood_function(sigma, winner, winner)
-        w_j = self.weights[winner, :]
-        delta_w_j = eta * T_ji * (input - w_j)
-        self.weights[winner, :] = w_j + delta_w_j
+        if self.problemType == "TSP":
+            T_ji = self.topological_neighbourhood_function(sigma, winner, winner)
+            w_j = self.weights[winner, :]
+            delta_w_j = eta * T_ji * (input - w_j)
+            self.weights[winner, :] = w_j + delta_w_j
 
-        step = 1.0
-        index = int(winner + step) % self.numOutputs
-        while(1):
-            T_ji = self.topological_neighbourhood_function(sigma, winner, index)
-            if T_ji < 0.001:
-                break
-            else:
-                if self.problemType == "TSP":
+            step = 1.0
+            index = int(winner + step) % self.numOutputs
+            while(1):
+                T_ji = self.topological_neighbourhood_function(sigma, winner, index)
+                if T_ji < 0.001:
+                    break
+                else:
                     w_j = self.weights[index, :]
                     delta_w_j = eta * T_ji * (input - w_j)
                     self.weights[index, :] = w_j + delta_w_j
 
                     step = (step + step/abs(step))*(-1)
                     index = int((index + step) % self.numOutputs)
-                elif self.problemType == "ICP":
-                    pass
+        elif self.problemType == "ICP":
+            notVisited = [winner]
+            discovered = {winner}
+
+            while(notVisited):
+                node = notVisited.pop(0)
+                nodeCoordinates = misc.index_list_2_grid(node, self.gridSize)
+                neighbours = misc.find_2d_four_way_neighbours(nodeCoordinates, self.gridSize)
+                for neighbour in neighbours:
+                    neighbourIndex = misc.index_grid_2_list(neighbour, self.gridSize)
+                    if neighbourIndex not in discovered:
+                        T_ji = self.topological_neighbourhood_function(sigma, winner, neighbourIndex)
+                        if T_ji < 0.1:
+                            break
+                        else:
+                            w_j = self.weights[neighbourIndex, :]
+                            delta_w_j = eta * T_ji * (input - w_j)
+                            self.weights[neighbourIndex, :] = w_j + delta_w_j
+
+                        notVisited.append(neighbourIndex)
+                        discovered.add(neighbourIndex)
+
+
+
+
 
     def run(self):
         self.weight_initialization()
@@ -252,12 +275,13 @@ class Caseman():
         np.random.set_state(self.state)
         np.random.shuffle(cases)
         return cases
-
+#
 icpSOM = SOM(problemType = 'ICP', problemArg = 2, gridSize = 10, initialWeightRange = (0,1),
                epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
+icpSOM.run()
+
 # tspSOM = SOM(problemType = 'TSP', problemArg = 2, initialWeightRange = (0,1),
 #                epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
-# testSOM.run()
-print("Manhattan distance: ", icpSOM.manhattan_distance(0, 12))
+# tspSOM.run()
 
 
