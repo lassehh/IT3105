@@ -111,6 +111,18 @@ def normalize(v):
         return v
     return v/norm
 
+def index_grid_2_list(coordinates, gridSize):
+    return coordinates[0] + coordinates[1] * gridSize
+
+def index_list_2_grid(index, gridSize):
+    x, y = 0, 0
+    while((y+1)*gridSize <= index and (y+1) < gridSize):
+        y += 1
+    while(x + y*gridSize != index):
+        x += 1
+        if(x >= gridSize): return AttributeError("Cannot convert index to x,y coordinates.")
+    return (x,y)
+
 def generate_mnist_data():
     data_dir = '../data/mnist'
     mnist = input_data.read_data_sets(data_dir, one_hot=False)
@@ -120,5 +132,7 @@ def generate_mnist_data():
     # a = np.concatenate((trainingSet.images, (trainingSet.labels).T), axis = 1)
     return trainingSet
 
-draw_image_classification_graph()
+#gridIndex = index_list_2_grid(16, 4)
+#print(gridIndex)
+# draw_image_classification_graph()
 # generate_mnist_data()

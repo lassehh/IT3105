@@ -41,7 +41,7 @@ class SOM:
             case_generator = (lambda: misc.generate_mnist_data())
             self.caseManager = Caseman(cfunc=case_generator, cfrac=0.05, vfrac=0.0, tfrac=0.05)
             self.inputs = self.caseManager.get_training_cases()
-            self.numOutputs = numOutputs
+            self.numOutputs = numOutputs*numOutputs
         elif problemType == 'TSP':
             case_generator = (lambda: misc.generate_tsp_data(problemArg))
             self.caseManager = Caseman(cfunc=case_generator, cfrac=1.0, vfrac=0.0, tfrac=0.0)
@@ -109,7 +109,9 @@ class SOM:
                 distance = abs(self.numOutputs - distance)
             return distance
         elif self.problemType == 'ICP':
-            pass
+            gridIndexNi = misc.index_list_2_grid(neuron_i, self.numOutputs)
+            gridIndexNj = misc.index_list_2_grid(neuron_j, self.numOutputs)
+            return (abs(gridIndexNi[0] - gridIndexNj[0]) + abs(gridIndexNi[1] - gridIndexNj[1]))
 
     def weight_update(self, sigma, eta, input, winner):
         T_ji = self.topological_neighbourhood_function(sigma, winner, winner)
@@ -244,7 +246,11 @@ class Caseman():
     def get_testing_cases(self): return self.testing_cases
 
 
-testSOM = SOM(problemType = 'TSP', problemArg = 2, initialWeightRange = (0,1),
-              epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
-testSOM.run()
+icpSOM = SOM(problemType = 'ICP', problemArg = 2, initialWeightRange = (0,1),
+               epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
+tspSOM = SOM(problemType = 'TSP', problemArg = 2, initialWeightRange = (0,1),
+               epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
+# testSOM.run()
+print("Manhatten distance: ", testSOM.manhattan_distance(4,8))
+
 
