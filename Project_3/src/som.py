@@ -5,7 +5,7 @@ import time
 import math
 
 # Define constants
-PLOT_INTERVAL = 5
+PLOT_INTERVAL = 20
 
 class SOM:
     inputs = None                   # City coordinates, scaled between 0 and 1
@@ -160,9 +160,6 @@ class SOM:
                         discovered.add(neighbourIndex)
 
 
-
-
-
     def run(self):
         self.weight_initialization()
 
@@ -195,7 +192,7 @@ class SOM:
                 endTime = time.clock()
                 print("Plot time: \t\t\t\t", endTime - startTime, "\t[s]")
 
-        path_length = self.calculate_path_length()
+        path_length = self.calc_path_length()
         print("Final path length: ", path_length)
         wait = input("ENTER TO QUIT")
         PLT.close(fig)
@@ -220,50 +217,49 @@ class SOM:
         return nodeLabels
 
 
+    def calc_path_length(self):
+        winners = np.ones(len(self.inputs), dtype = np.int32)*(-1)    # array to be filled with the winning neuron for each city
+        for i, input in enumerate(self.inputs):
+            winning_neuron = self.competitive_process(input)
+            winners[i] = winning_neuron
+        mapCityIndex2OutputIndex = np.stack((np.arange(len(self.inputs)), winners), axis = 1)
+        mapCityIndex2OutputIndex = mapCityIndex2OutputIndex[np.argsort(mapCityIndex2OutputIndex[:, 1])] # sort the array based on ascending output neuron index
 
-    def calculate_path_length(self):
         distance = 0
         prevCity = 0
         firstCity = 0
-        visitedCities = set()
         cityCoordinates = self.caseManager.get_unnormalized_cases()
+        PLT.ion()
+        fig = PLT.figure()
+        PLT.plot(cityCoordinates[:, 0], cityCoordinates[:, 1], 'ro')
+        # go through the array:
+        for j, cityAndOutput in enumerate(mapCityIndex2OutputIndex):
+            city, _ = cityAndOutput
+            if j == 0:
+                prevCity = city
+                firstCity = city
+            else:
+                distance += (np.linalg.norm(cityCoordinates[city, :] - cityCoordinates[prevCity, :]))
 
-        # fig = PLT.figure()
-        for j in range(0, self.numOutputs):
-            discriminants = []
-            w_j = self.weights[j, :]
-            for input in self.inputs:
-                d_j = self.discriminant_function(input, w_j)
-                discriminants.append(d_j)
-            currentCity = np.argmin(np.array(discriminants))
+            xpts = np.append(cityCoordinates[prevCity, 0], cityCoordinates[city, 0])
+            ypts = np.append(cityCoordinates[prevCity, 1], cityCoordinates[city, 1])
+            PLT.plot(xpts, ypts, 'bx--')
+            PLT.show()
+            PLT.pause(0.001)
 
-            # The current output neuron "won" input city with index "currentCity"
-            # Calculate distance between this city and the previous city in the path
-            if currentCity not in visitedCities or j == self.numOutputs-1:
-                visitedCities.add(currentCity)
-                if j == 0:
-                    distance = 0
-                    prevCity = currentCity
-                    firstCity = currentCity
-                elif j == self.numOutputs - 1:
-                    # Last output neuron reached. Must calculate the distance from the last city to the first
-                    if firstCity == currentCity:  # the last output neuron lies between the first and last city
-                        distance += (np.linalg.norm(cityCoordinates[prevCity, :] - cityCoordinates[firstCity, :]))
-                    else:
-                        distance += (np.linalg.norm(cityCoordinates[currentCity, :] - cityCoordinates[firstCity, :]))
-                else:
-                    distance += (np.linalg.norm(cityCoordinates[currentCity, :] - cityCoordinates[prevCity, :]))
-                    prevCity = currentCity
-
-                # print("Current path length: ", distance)
-                # PLT.title("Current city")
-                # PLT.plot(cityCoordinates[:, 0], cityCoordinates[:, 1], 'ro')
-                # PLT.plot(cityCoordinates[currentCity, 0], cityCoordinates[currentCity, 1], 'bx')
-                #
-                # PLT.show()
-                # PLT.pause(0.001)
-
+            prevCity = city
+        distance += (np.linalg.norm(cityCoordinates[firstCity, :] - cityCoordinates[prevCity, :]))
+        xpts = np.append(cityCoordinates[prevCity, 0], cityCoordinates[firstCity, 0])
+        ypts = np.append(cityCoordinates[prevCity, 1], cityCoordinates[firstCity, 1])
+        PLT.plot(xpts, ypts, 'bx--')
+        PLT.show()
+        PLT.pause(0.001)
+        PLT.ioff()
         return distance
+
+
+
+
 
 
 class Caseman():
@@ -302,13 +298,12 @@ class Caseman():
         np.random.shuffle(cases)
         return cases
 
-icpSOM = SOM(problemType = 'ICP', problemArg = 2, gridSize = 10, initialWeightRange = (0,1),
+icpSOM = SOM(problemType = 'ICP', problemArg = 8, gridSize = 10, initialWeightRange = (0,1),
                epochs = 100, sigma_0 = 3.0, tau_sigma = 25, eta_0 = 0.1, tau_eta = 1000)
 
 icpSOM.run()
 
-# tspSOM = SOM(problemType = 'TSP', problemArg = 2, initialWeightRange = (0,1),
+# tspSOM = SOM(problemType = 'TSP', problemArg = 8, gridSize = 10, initialWeightRange = (0,1),
 #                epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
+#
 # tspSOM.run()
-
-
