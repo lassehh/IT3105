@@ -9,6 +9,7 @@ PLOT_INTERVAL = 5
 
 class SOM:
     inputs = None                   # City coordinates, scaled between 0 and 1
+    input_labels = None
     weights = None                  # Numpy array of weights between input and output layer
     timeStep = None
     numOutputs = None
@@ -39,12 +40,14 @@ class SOM:
         self.problemType = problemType
         if problemType == 'ICP':
             case_generator = (lambda: misc.generate_mnist_data())
-            self.caseManager = Caseman(cfunc=case_generator, cfrac=0.05, vfrac=0.0, tfrac=0.05)
+            self.caseManager = Caseman(cfunc=case_generator, cfrac=0.05, tfrac=0.05)
             self.inputs = self.caseManager.get_training_cases()
+            self.input_labels = self.inputs[:, -1]
+            self.inputs = self.inputs[:, :-1]
             self.numOutputs = numOutputs*numOutputs
         elif problemType == 'TSP':
             case_generator = (lambda: misc.generate_tsp_data(problemArg))
-            self.caseManager = Caseman(cfunc=case_generator, cfrac=1.0, vfrac=0.0, tfrac=0.0)
+            self.caseManager = Caseman(cfunc=case_generator, cfrac=1.0, tfrac=0.0)
             self.inputs = self.caseManager.get_training_cases()
             self.numOutputs = round(2 * len(self.inputs))  # The number of cities in the problem
         else:
@@ -160,10 +163,10 @@ class SOM:
                 endTime = time.clock()
                 print("Plot time: \t\t\t\t", endTime - startTime, "\t[s]")
 
-        #path_length = self.calculate_path_length()
+        path_length = self.calculate_path_length()
+        print("Final path length: ", path_length)
         wait = input("ENTER TO QUIT")
-        PLT.ioff()
-        #PLT.close(fig)
+        PLT.close(fig)
         PLT.pause(0.01)
 
 
@@ -172,7 +175,7 @@ class SOM:
         prevCity = 0
         firstCity = 0
         visitedCities = set()
-        cityCoordinates = self.caseManager.unnormalized_cases
+        cityCoordinates = self.caseManager.get_unnormalized_cases()
 
         # fig = PLT.figure()
         for j in range(0, self.numOutputs):
@@ -201,7 +204,7 @@ class SOM:
                     distance += (np.linalg.norm(cityCoordinates[currentCity, :] - cityCoordinates[prevCity, :]))
                     prevCity = currentCity
 
-                print("Current path length: ", distance)
+                # print("Current path length: ", distance)
                 # PLT.title("Current city")
                 # PLT.plot(cityCoordinates[:, 0], cityCoordinates[:, 1], 'ro')
                 # PLT.plot(cityCoordinates[currentCity, 0], cityCoordinates[currentCity, 1], 'bx')
@@ -211,13 +214,13 @@ class SOM:
 
         return distance
 
+
 class Caseman():
-    def __init__(self, cfunc, cfrac = .8, vfrac = 0.1, tfrac = .1):
+    def __init__(self, cfunc, cfrac = .8, tfrac = .1):
         self.casefunc = cfunc  # Function used to generate all data cases from a dataset
         self.case_fraction = cfrac  # What fraction of the total data cases to use
-        # self.validation_fraction = vfrac  # What fraction of the data to use for validation
         self.test_fraction = tfrac  # What fraction of the data to use for final testing
-        self.training_fraction = cfrac # 1 - (tfrac)
+        self.training_fraction = 1 - (tfrac)
         self.generate_cases()
         self.organize_cases()
 
@@ -226,15 +229,12 @@ class Caseman():
 
     def organize_cases(self):
         cases = self.cases[0]
-        self.unnormalized_cases = self.cases[1]
 
-        state = np.random.get_state()
+        self.state = np.random.get_state()
         np.random.shuffle(cases)  # Randomly shuffle all cases
-        np.random.set_state(state)
-        np.random.shuffle(self.unnormalized_cases)
 
         if self.case_fraction < 1:
-            case_separator = round(len(self.cases) * self.case_fraction)
+            case_separator = round(len(self.cases[0]) * self.case_fraction)
             cases = cases[0:case_separator]  # only use a fraction of the cases
 
         training_separator = round(len(cases) * self.training_fraction)
@@ -245,6 +245,11 @@ class Caseman():
 
     def get_testing_cases(self): return self.testing_cases
 
+    def get_unnormalized_cases(self):
+        cases = self.cases[1]
+        np.random.set_state(self.state)
+        np.random.shuffle(cases)
+        return cases
 
 icpSOM = SOM(problemType = 'ICP', problemArg = 2, initialWeightRange = (0,1),
                epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)

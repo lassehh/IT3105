@@ -127,10 +127,9 @@ def generate_mnist_data():
     data_dir = '../data/mnist'
     mnist = input_data.read_data_sets(data_dir, one_hot=False)
     trainingSet = mnist.train
-    lol = 0
-    transpose = trainingSet.labels.T
-    # a = np.concatenate((trainingSet.images, (trainingSet.labels).T), axis = 1)
-    return trainingSet
+    labels = np.array([trainingSet.labels])
+    concatenated = np.concatenate((trainingSet.images, labels.T), axis = 1)
+    return concatenated, concatenated
 
 #gridIndex = index_list_2_grid(16, 4)
 #print(gridIndex)
