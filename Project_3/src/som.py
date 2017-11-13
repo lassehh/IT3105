@@ -9,7 +9,7 @@ PLOT_INTERVAL = 5
 
 class SOM:
     inputs = None                   # City coordinates, scaled between 0 and 1
-    input_labels = None
+    inputLabels = None
     weights = None                  # Numpy array of weights between input and output layer
     timeStep = None
     numOutputs = None
@@ -43,7 +43,7 @@ class SOM:
             case_generator = (lambda: misc.generate_mnist_data())
             self.caseManager = Caseman(cfunc=case_generator, cfrac=0.01, tfrac=0.05)
             self.inputs = self.caseManager.get_training_cases()
-            self.input_labels = self.inputs[:, -1]
+            self.inputLabels = self.inputs[:, -1]
             self.inputs = self.inputs[:, :-1]
             self.numOutputs = gridSize*gridSize
             self.gridSize = gridSize
@@ -141,7 +141,6 @@ class SOM:
         elif self.problemType == "ICP":
             notVisited = [winner]
             discovered = {winner}
-
             while(notVisited):
                 node = notVisited.pop(0)
                 nodeCoordinates = misc.index_list_2_grid(node, self.gridSize)
@@ -167,7 +166,11 @@ class SOM:
     def run(self):
         self.weight_initialization()
 
-        fig, ax, background, weightPts, inputPts = misc.create_tsp_plot(self.weights, self.inputs)
+        if self.problemType == "TSP":
+            fig, ax, background, weightPts, inputPts = misc.create_tsp_plot(self.weights, self.inputs)
+        elif self.problemType == "ICP":
+            nodeLabels = self.decide_nodes_classification()
+            misc.draw_image_classification_graph(nodeLabelsMatrix = nodeLabels, gridSize = int(self.gridSize))
 
         for timeStep in range (0, self.epochs + 1):
             self.timeStep = timeStep
@@ -182,9 +185,13 @@ class SOM:
 
             if timeStep % PLOT_INTERVAL == 0:
                 startTime = time.clock()
-                misc.update_tsp_plot(fig, ax, background, self.weights, weightPts,
-                                     self.learning_rate_function(), timeStep, self.epochs,
-                                    self.neighbourhood_size_function())
+                if self.problemType == "TSP":
+                    misc.update_tsp_plot(fig, ax, background, self.weights, weightPts,
+                                         self.learning_rate_function(), timeStep, self.epochs,
+                                        self.neighbourhood_size_function())
+                elif self.problemType == "ICP":
+                    nodeLabels = self.decide_nodes_classification()
+                    misc.draw_image_classification_graph(nodeLabelsMatrix=nodeLabels, gridSize=int(self.gridSize))
                 endTime = time.clock()
                 print("Plot time: \t\t\t\t", endTime - startTime, "\t[s]")
 
@@ -193,6 +200,25 @@ class SOM:
         wait = input("ENTER TO QUIT")
         PLT.close(fig)
         PLT.pause(0.01)
+
+    def decide_nodes_classification(self):
+        winnerMatrix = np.zeros((self.gridSize, self.gridSize, 10))
+        for index, input in enumerate(self.inputs):
+            label = int(self.inputLabels[index])
+            winnerIndex = self.competitive_process(input)
+            x, y = misc.index_list_2_grid(winnerIndex, self.gridSize)
+            winnerMatrix[x, y, label] += 1
+        nodeLabels = np.zeros((self.gridSize, self.gridSize))
+        for x in range(0,self.gridSize):
+            for y in range(0,self.gridSize):
+                label = np.argmax(winnerMatrix[x,y,:])
+                if winnerMatrix[x,y,label] == 0:
+                    nodeLabels[x,y] = 10
+                    #TODO: choose label based on neighbours
+                    #getNeighbourhoodClassification
+                else: nodeLabels[x,y] = label
+        return nodeLabels
+
 
 
     def calculate_path_length(self):
@@ -275,9 +301,10 @@ class Caseman():
         np.random.set_state(self.state)
         np.random.shuffle(cases)
         return cases
-#
+
 icpSOM = SOM(problemType = 'ICP', problemArg = 2, gridSize = 10, initialWeightRange = (0,1),
-               epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
+               epochs = 100, sigma_0 = 3.0, tau_sigma = 25, eta_0 = 0.1, tau_eta = 1000)
+
 icpSOM.run()
 
 # tspSOM = SOM(problemType = 'TSP', problemArg = 2, initialWeightRange = (0,1),

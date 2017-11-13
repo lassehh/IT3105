@@ -8,7 +8,7 @@ import time
 from tensorflow.examples.tutorials.mnist import input_data
 
 labelColorDict = {0: 'b', 1: 'g', 2: 'y', 3: 'r', 4: 'pink', 5: 'm', 6:
-                  'cyan', 7: 'grey', 8: 'black', 9: 'orange'}
+                  'cyan', 7: 'grey', 8: 'black', 9: 'orange', 10: 'white'}
 
 
 
@@ -84,13 +84,13 @@ def update_tsp_plot(fig, ax, background, weights, weightPts,
 
     plt.pause(0.00001)
 
-def draw_image_classification_graph(gridSize = 10, numberOfLabels = 9):
+def draw_image_classification_graph(nodeLabelsMatrix, gridSize = 10, numberOfLabels = 9):
     start = time.clock()
     G = nx.grid_2d_graph(gridSize, gridSize)
     pos = dict((n, n) for n in G.nodes())
 
     for node in G:
-        labelNumber = round(random.random()*numberOfLabels)
+        labelNumber = nodeLabelsMatrix[node]
         labelColor = labelColorDict[labelNumber]
         nx.draw_networkx_nodes(G, pos,
                                nodelist=[node],
@@ -147,5 +147,5 @@ def generate_mnist_data():
 
 #gridIndex = index_list_2_grid(16, 4)
 #print(gridIndex)
-# draw_image_classification_graph()
+#draw_image_classification_graph(5)
 # generate_mnist_data()
