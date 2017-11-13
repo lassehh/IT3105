@@ -13,6 +13,7 @@ class SOM:
     weights = None                  # Numpy array of weights between input and output layer
     timeStep = None
     numOutputs = None
+    gridSize = None
 
     initialWeightRange = None
     caseManager = None
@@ -30,7 +31,7 @@ class SOM:
 
 
 
-    def __init__(self, problemType = 'TSP', problemArg = 1, initialWeightRange = (0,1), numOutputs = 10, epochs = 200, sigma_0 = 5.0, tau_sigma = 1, eta_0 = 0.1, tau_eta = 1):
+    def __init__(self, problemType = 'TSP', problemArg = 1, initialWeightRange = (0,1), gridSize = 10, epochs = 200, sigma_0 = 5.0, tau_sigma = 1, eta_0 = 0.1, tau_eta = 1):
         self.sigma_0 = sigma_0
         self.tau_sigma = tau_sigma
         self.eta_0 = eta_0
@@ -44,7 +45,8 @@ class SOM:
             self.inputs = self.caseManager.get_training_cases()
             self.input_labels = self.inputs[:, -1]
             self.inputs = self.inputs[:, :-1]
-            self.numOutputs = numOutputs*numOutputs
+            self.numOutputs = gridSize*gridSize
+            self.gridSize = gridSize
         elif problemType == 'TSP':
             case_generator = (lambda: misc.generate_tsp_data(problemArg))
             self.caseManager = Caseman(cfunc=case_generator, cfrac=1.0, tfrac=0.0)
@@ -112,8 +114,8 @@ class SOM:
                 distance = abs(self.numOutputs - distance)
             return distance
         elif self.problemType == 'ICP':
-            gridIndexNi = misc.index_list_2_grid(neuron_i, self.numOutputs)
-            gridIndexNj = misc.index_list_2_grid(neuron_j, self.numOutputs)
+            gridIndexNi = misc.index_list_2_grid(neuron_i, self.gridSize)
+            gridIndexNj = misc.index_list_2_grid(neuron_j, self.gridSize)
             return (abs(gridIndexNi[0] - gridIndexNj[0]) + abs(gridIndexNi[1] - gridIndexNj[1]))
 
     def weight_update(self, sigma, eta, input, winner):
@@ -251,11 +253,11 @@ class Caseman():
         np.random.shuffle(cases)
         return cases
 
-icpSOM = SOM(problemType = 'ICP', problemArg = 2, initialWeightRange = (0,1),
+icpSOM = SOM(problemType = 'ICP', problemArg = 2, gridSize = 10, initialWeightRange = (0,1),
                epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
-tspSOM = SOM(problemType = 'TSP', problemArg = 2, initialWeightRange = (0,1),
-               epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
+# tspSOM = SOM(problemType = 'TSP', problemArg = 2, initialWeightRange = (0,1),
+#                epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
 # testSOM.run()
-print("Manhatten distance: ", testSOM.manhattan_distance(4,8))
+print("Manhattan distance: ", icpSOM.manhattan_distance(0, 12))
 
 
