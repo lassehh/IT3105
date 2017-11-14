@@ -178,7 +178,7 @@ class SOM:
                 winner = self.competitive_process(i)
                 self.weight_update(eta = eta, sigma = sigma , input = i, winner = winner)
             endTime = time.clock()
-            print("Epoch: ", timeStep, end='');
+            print("Epoch: ", timeStep, end='')
             print("\t\tWeight update time: \t", endTime - startTime, "\t[s]")
 
             if timeStep % PLOT_INTERVAL == 0:
@@ -306,7 +306,7 @@ class Caseman():
 #
 # icpSOM.run()
 
-tspSOM = SOM(problemType = 'TSP', problemArg = 1, initialWeightRange = (0,1),
+tspSOM = SOM(problemType = 'TSP', problemArg = 7,
                epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
 
 tspSOM.run()

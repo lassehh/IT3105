@@ -66,8 +66,8 @@ def create_tsp_plot(weights, inputs):
     neuronRingX = np.append(weights[:, 1], weights[0, 1])
 
 
-    inputPts = ax.plot(inputs[:, 0], inputs[:, 1], 'g^')
-    weightPts = ax.plot(neuronRingY, neuronRingX, 'bx--')[0]
+    inputPts = ax.plot(inputs[:, 0], inputs[:, 1], '^', color='darkslateblue')
+    weightPts = ax.plot(neuronRingY, neuronRingX, '.--', color='teal', linewidth=0.8)[0]
     plt.pause(0.00001)
 
     return fig, ax, background, weightPts, inputPts
