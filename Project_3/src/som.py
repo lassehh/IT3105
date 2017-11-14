@@ -4,12 +4,16 @@ import miscfunctions as misc
 import time
 import math
 
-# Define constants
-PLOT_INTERVAL = 20
 
 class SOM:
-    inputs = None                   # City coordinates, scaled between 0 and 1
-    inputLabels = None
+    trainingCases = None                   # City coordinates, scaled between 0 and 1
+    testingCases = None
+    trainingCaseLabels = None
+    testingCaseLabels = None
+
+    plotInterval = None
+    testInterval = None
+
     weights = None                  # Numpy array of weights between input and output layer
     timeStep = None
     numOutputs = None
@@ -31,7 +35,7 @@ class SOM:
 
 
 
-    def __init__(self, problemType = 'TSP', problemArg = 1, initialWeightRange = (0,1), gridSize = 10, epochs = 200, sigma_0 = 5.0, tau_sigma = 1, eta_0 = 0.1, tau_eta = 1):
+    def __init__(self, plotInterval = 10, testInterval = 10, problemType = 'TSP', problemArg = 1, initialWeightRange = (0,1), gridSize = 10, epochs = 200, sigma_0 = 5.0, tau_sigma = 1, eta_0 = 0.1, tau_eta = 1):
         self.sigma_0 = sigma_0
         self.tau_sigma = tau_sigma
         self.eta_0 = eta_0
@@ -40,30 +44,40 @@ class SOM:
         self.initialWeightRange = initialWeightRange
         self.problemType = problemType
         if problemType == 'ICP':
+            # Plot and testing intervals
+            self.plotInterval = plotInterval
+            self.testInterval = testInterval
+            # Generate training and testing cases
             case_generator = (lambda: misc.generate_mnist_data())
-            self.caseManager = Caseman(cfunc=case_generator, cfrac=0.01, tfrac=0.05)
-            self.inputs = self.caseManager.get_training_cases()
-            self.inputLabels = self.inputs[:, -1]
-            self.inputs = self.inputs[:, :-1]
+            self.caseManager = Caseman(cfunc=case_generator, cfrac=0.023, tfrac=0.50)
+            trainingCases = self.caseManager.get_training_cases()
+            self.trainingCaseLabels = trainingCases[:, -1]
+            self.trainingCases = trainingCases[:, :-1]
+            testingCases = self.caseManager.get_testing_cases()
+            self.testingCaseLabels = testingCases[:, -1]
+            self.testingCases = testingCases[:, :-1]
+            # Specify grid size and node labels
             self.numOutputs = gridSize*gridSize
             self.gridSize = gridSize
+            self.nodeLabels = None
         elif problemType == 'TSP':
             case_generator = (lambda: misc.generate_tsp_data(problemArg))
             self.caseManager = Caseman(cfunc=case_generator, cfrac=1.0, tfrac=0.0)
-            self.inputs = self.caseManager.get_training_cases()
-            self.numOutputs = round(2 * len(self.inputs))  # The number of cities in the problem
+            self.trainingCases = self.caseManager.get_training_cases()
+            self.numOutputs = round(2 * len(self.trainingCases))  # The number of cities in the problem
         else:
             raise AssertionError("Unknown problem type " + problemType + ".")
 
         self.discriminantsStorage = [None] * self.numOutputs
         self.timeStep = 0
         self.epochs = epochs
+        self.weight_initialization()
 
 
 
 
     def weight_initialization(self):
-        self.weights = np.zeros(shape=(self.numOutputs, len(self.inputs[0])))
+        self.weights = np.zeros(shape=(self.numOutputs, len(self.trainingCases[0])))
         if self.problemType == "TSP":
             index = 0
             range = np.arange(0, 2 * math.pi, 2 * math.pi / self.numOutputs)
@@ -74,7 +88,7 @@ class SOM:
                 index += 1
         elif self.problemType == "ICP":
             (lower_w, upper_w) = self.initialWeightRange
-            self.weights = np.random.uniform(lower_w, upper_w, size=(self.numOutputs, len(self.inputs[0])))
+            self.weights = np.random.uniform(lower_w, upper_w, size=(self.numOutputs, len(self.trainingCases[0])))
 
 
     # the discriminant is the squared Euclidean distance between the input vector and the weight vector w_j for each neuron j.
@@ -161,68 +175,142 @@ class SOM:
 
 
     def run(self):
-        self.weight_initialization()
-
         if self.problemType == "TSP":
-            fig, ax, background, weightPts, inputPts = misc.create_tsp_plot(self.weights, self.inputs)
+            self.run_tsp()
         elif self.problemType == "ICP":
-            nodeLabels = self.decide_nodes_classification()
-            misc.draw_image_classification_graph(nodeLabelsMatrix = nodeLabels, gridSize = int(self.gridSize))
+            self.run_icp()
+        else:
+            raise AssertionError("Problem type \'", self.problemType, "\' is not defined.")
+
+
+    def run_tsp(self):
+        fig, ax, background, weightPts, inputPts = misc.create_tsp_plot(self.weights, self.trainingCases)
 
         for timeStep in range (0, self.epochs + 1):
             self.timeStep = timeStep
-            startTime = time.clock()
+
             eta = self.learning_rate_function()
             sigma = self.neighbourhood_size_function()
-            for i in self.inputs:
+            for i in self.trainingCases:
                 winner = self.competitive_process(i)
                 self.weight_update(eta = eta, sigma = sigma , input = i, winner = winner)
-            endTime = time.clock()
-            print("Weight update time: \t", endTime - startTime, "\t[s]")
 
-            if timeStep % PLOT_INTERVAL == 0:
-                startTime = time.clock()
-                if self.problemType == "TSP":
-                    misc.update_tsp_plot(fig, ax, background, self.weights, weightPts,
-                                         self.learning_rate_function(), timeStep, self.epochs,
-                                        self.neighbourhood_size_function())
-                elif self.problemType == "ICP":
-                    nodeLabels = self.decide_nodes_classification()
-                    misc.draw_image_classification_graph(nodeLabelsMatrix=nodeLabels, gridSize=int(self.gridSize))
-                endTime = time.clock()
-                print("Plot time: \t\t\t\t", endTime - startTime, "\t[s]")
+            # Plot every PLOT_INTVEVAL
+            if timeStep % self.plotInterval == 0:
+                misc.update_tsp_plot(fig, ax, background, self.weights, weightPts,
+                                     self.learning_rate_function(), timeStep, self.epochs,
+                                    self.neighbourhood_size_function())
 
-        path_length = self.calc_path_length()
-        print("Final path length: ", path_length)
+        pathLength = self.calc_path_length()
+        print("Final path length: ", pathLength)
         wait = input("ENTER TO QUIT")
         PLT.close(fig)
         PLT.pause(0.01)
 
+    def run_icp(self):
+        # Plot initial node classifications
+        print("Plotting initial node labels..")
+        self.nodeLabels = self.decide_nodes_classification()
+        misc.draw_image_classification_graph(nodeLabelsMatrix=self.nodeLabels, gridSize=int(self.gridSize))
+
+        accuracyHistory = []
+        for timeStep in range(0, self.epochs + 1):
+            print(">> TIMESTEP: ", timeStep)
+            self.timeStep = timeStep
+
+            eta = self.learning_rate_function()
+            sigma = self.neighbourhood_size_function()
+            print('Learning rate: \t\t\t%5.4f' % (eta))
+            print('Neighbourhood size: \t%5.4f' % (sigma))
+
+            # Training: do weight updates with the training cases
+            for i in self.trainingCases:
+                winner = self.competitive_process(i)
+                self.weight_update(eta = eta, sigma = sigma, input = i, winner = winner)
+
+            # Plot every PLOT_INTVEVAL
+            if timeStep % self.plotInterval == 0 and timeStep != 0:
+                self.nodeLabels = self.decide_nodes_classification()
+                misc.draw_image_classification_graph(nodeLabelsMatrix=self.nodeLabels, gridSize=int(self.gridSize))
+
+            # Test accuracy of the classificator every TEST_INTERVAL
+            if timeStep % self.testInterval == 0 and timeStep != 0:
+                self.nodeLabels = self.decide_nodes_classification()
+                accuracy = self.test_icp_accuracy(self.trainingCases, self.trainingCaseLabels, self.nodeLabels, caseType = "Training")
+                accuracyHistory.append((timeStep, accuracy)) #x,y plot
+
+        # Final testing on the testing cases
+        self.nodeLabels = self.decide_nodes_classification()
+        self.test_icp_accuracy(self.testingCases, self.testingCaseLabels, self.nodeLabels, caseType="Final testing")
+        misc.plot_training_history(accuracyHistory, xtitle = "Timestep [ ]", ytitle = 'Accuracy [%]', title = "SOM ICP ACCURACY")
+
+        wait = input("ENTER TO QUIT")
+        #PLT.close(fig)
+        #PLT.pause(0.01)
+
+
+    def test_icp_accuracy(self, cases, casesLabels, nodeLabels, caseType):
+        correct, incorrect = 0.0, 0.0
+        for index, case in enumerate(cases):
+            caseLabel = int(casesLabels[index])
+            winnerNeuronIndex = self.competitive_process(case)
+            x, y = misc.index_list_2_grid(winnerNeuronIndex, self.gridSize)
+            if nodeLabels[x,y] == caseLabel:
+                correct += 1.0
+            else: incorrect += 1.0
+        accuracy = (correct/(incorrect+correct))*100.0
+        print('%s accuracy: \t\t%d %%' % (caseType, accuracy))
+        return accuracy
+
+
     def decide_nodes_classification(self):
         winnerMatrix = np.zeros((self.gridSize, self.gridSize, 10))
-        for index, input in enumerate(self.inputs):
-            label = int(self.inputLabels[index])
+        for index, input in enumerate(self.trainingCases):
+            label = int(self.trainingCaseLabels[index])
             winnerIndex = self.competitive_process(input)
             x, y = misc.index_list_2_grid(winnerIndex, self.gridSize)
             winnerMatrix[x, y, label] += 1
         nodeLabels = np.zeros((self.gridSize, self.gridSize))
+        nonLabeledNodes = []
         for x in range(0,self.gridSize):
             for y in range(0,self.gridSize):
                 label = np.argmax(winnerMatrix[x,y,:])
                 if winnerMatrix[x,y,label] == 0:
-                    nodeLabels[x,y] = 10
-                    #TODO: choose label based on neighbours
-                    #getNeighbourhoodClassification
+                    nodeLabels[x,y] = -1
+                    nonLabeledNodes.append((x,y))
                 else: nodeLabels[x,y] = label
+        self.fill_in_non_classified(nodeLabels, nonLabeledNodes)
         return nodeLabels
+
+    def fill_in_non_classified(self, nodeLabels, nonLabeledNodes):
+        labelsAccumulator = np.zeros(10)
+        for nonLabeledNode in nonLabeledNodes:
+            x, y = nonLabeledNode
+            neighbours = misc.find_2d_eight_way_neighbours((x, y), self.gridSize)
+            for neighbour in neighbours:
+                neighbourX, neighbourY = neighbour
+                neighbourLabel = nodeLabels[neighbourX, neighbourY]
+                if neighbourLabel == -1:
+                    continue
+                else:
+                    if (abs(neighbourX) + abs(neighbourY)) == 1:
+                        labelsAccumulator[int(neighbourLabel)] += 1
+                    elif (abs(neighbourX) + abs(neighbourY)) == 2:
+                        labelsAccumulator[int(neighbourLabel)] += 0.5
+            nodeLabel = np.argmax(labelsAccumulator)
+            nodeLabels[x, y] = nodeLabel
+
+
+
+
 
 
     def calc_path_length(self):
-        winners = np.ones(len(self.inputs), dtype = np.int32)*(-1)    # array to be filled with the winning neuron for each city
-        for i, input in enumerate(self.inputs):
+        winners = np.ones(len(self.trainingCases), dtype = np.int32)*(-1)    # array to be filled with the winning neuron for each city
+        for i, input in enumerate(self.trainingCases):
             winning_neuron = self.competitive_process(input)
             winners[i] = winning_neuron
-        mapCityIndex2OutputIndex = np.stack((np.arange(len(self.inputs)), winners), axis = 1)
+        mapCityIndex2OutputIndex = np.stack((np.arange(len(self.trainingCases)), winners), axis = 1)
         mapCityIndex2OutputIndex = mapCityIndex2OutputIndex[np.argsort(mapCityIndex2OutputIndex[:, 1])] # sort the array based on ascending output neuron index
 
         distance = 0
@@ -298,8 +386,9 @@ class Caseman():
         np.random.shuffle(cases)
         return cases
 
-icpSOM = SOM(problemType = 'ICP', problemArg = 8, gridSize = 10, initialWeightRange = (0,1),
-               epochs = 100, sigma_0 = 3.0, tau_sigma = 25, eta_0 = 0.1, tau_eta = 1000)
+icpSOM = SOM(problemType = 'ICP', problemArg = 8, gridSize = 22, initialWeightRange = (0,1),
+            epochs = 60, sigma_0 = 6, tau_sigma = 50, eta_0 = 0.1, tau_eta = 1000,
+            plotInterval = 20, testInterval = 5)
 
 icpSOM.run()
 
