@@ -178,7 +178,8 @@ class SOM:
                 winner = self.competitive_process(i)
                 self.weight_update(eta = eta, sigma = sigma , input = i, winner = winner)
             endTime = time.clock()
-            print("Weight update time: \t", endTime - startTime, "\t[s]")
+            print("Epoch: ", timeStep, end='');
+            print("\t\tWeight update time: \t", endTime - startTime, "\t[s]")
 
             if timeStep % PLOT_INTERVAL == 0:
                 startTime = time.clock()
@@ -190,13 +191,12 @@ class SOM:
                     nodeLabels = self.decide_nodes_classification()
                     misc.draw_image_classification_graph(nodeLabelsMatrix=nodeLabels, gridSize=int(self.gridSize))
                 endTime = time.clock()
-                print("Plot time: \t\t\t\t", endTime - startTime, "\t[s]")
+                print("\t\t\t\tPlot time: \t\t\t\t", endTime - startTime, "\t[s]")
 
-        path_length = self.calc_path_length()
+        path_length = self.calc_path_length(plot = False)
         print("Final path length: ", path_length)
         wait = input("ENTER TO QUIT")
         PLT.close(fig)
-        PLT.pause(0.01)
 
     def decide_nodes_classification(self):
         winnerMatrix = np.zeros((self.gridSize, self.gridSize, 10))
@@ -217,7 +217,7 @@ class SOM:
         return nodeLabels
 
 
-    def calc_path_length(self):
+    def calc_path_length(self, plot = False):
         winners = np.ones(len(self.inputs), dtype = np.int32)*(-1)    # array to be filled with the winning neuron for each city
         for i, input in enumerate(self.inputs):
             winning_neuron = self.competitive_process(input)
@@ -229,9 +229,10 @@ class SOM:
         prevCity = 0
         firstCity = 0
         cityCoordinates = self.caseManager.get_unnormalized_cases()
-        PLT.ion()
-        fig = PLT.figure()
-        PLT.plot(cityCoordinates[:, 0], cityCoordinates[:, 1], 'ro')
+        if plot:
+            PLT.ion()
+            fig = PLT.figure()
+            PLT.plot(cityCoordinates[:, 0], cityCoordinates[:, 1], 'ro')
         # go through the array:
         for j, cityAndOutput in enumerate(mapCityIndex2OutputIndex):
             city, _ = cityAndOutput
@@ -241,20 +242,22 @@ class SOM:
             else:
                 distance += (np.linalg.norm(cityCoordinates[city, :] - cityCoordinates[prevCity, :]))
 
-            xpts = np.append(cityCoordinates[prevCity, 0], cityCoordinates[city, 0])
-            ypts = np.append(cityCoordinates[prevCity, 1], cityCoordinates[city, 1])
-            PLT.plot(xpts, ypts, 'bx--')
-            PLT.show()
-            PLT.pause(0.001)
+            if plot:
+                xpts = np.append(cityCoordinates[prevCity, 0], cityCoordinates[city, 0])
+                ypts = np.append(cityCoordinates[prevCity, 1], cityCoordinates[city, 1])
+                PLT.plot(xpts, ypts, 'bx--')
+                PLT.show()
+                PLT.pause(0.001)
 
             prevCity = city
         distance += (np.linalg.norm(cityCoordinates[firstCity, :] - cityCoordinates[prevCity, :]))
-        xpts = np.append(cityCoordinates[prevCity, 0], cityCoordinates[firstCity, 0])
-        ypts = np.append(cityCoordinates[prevCity, 1], cityCoordinates[firstCity, 1])
-        PLT.plot(xpts, ypts, 'bx--')
-        PLT.show()
-        PLT.pause(0.001)
-        PLT.ioff()
+        if plot:
+            xpts = np.append(cityCoordinates[prevCity, 0], cityCoordinates[firstCity, 0])
+            ypts = np.append(cityCoordinates[prevCity, 1], cityCoordinates[firstCity, 1])
+            PLT.plot(xpts, ypts, 'bx--')
+            PLT.show()
+            PLT.pause(0.001)
+            PLT.ioff()
         return distance
 
 
@@ -298,12 +301,12 @@ class Caseman():
         np.random.shuffle(cases)
         return cases
 
-icpSOM = SOM(problemType = 'ICP', problemArg = 8, gridSize = 10, initialWeightRange = (0,1),
-               epochs = 100, sigma_0 = 3.0, tau_sigma = 25, eta_0 = 0.1, tau_eta = 1000)
-
-icpSOM.run()
-
-# tspSOM = SOM(problemType = 'TSP', problemArg = 8, gridSize = 10, initialWeightRange = (0,1),
-#                epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
+# icpSOM = SOM(problemType = 'ICP', problemArg = 8, gridSize = 10, initialWeightRange = (0,1),
+#                epochs = 100, sigma_0 = 3.0, tau_sigma = 25, eta_0 = 0.1, tau_eta = 1000)
 #
-# tspSOM.run()
+# icpSOM.run()
+
+tspSOM = SOM(problemType = 'TSP', problemArg = 1, initialWeightRange = (0,1),
+               epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
+
+tspSOM.run()
