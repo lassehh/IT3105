@@ -61,6 +61,7 @@ class SOM:
             self.gridSize = gridSize
             self.nodeLabels = None
         elif problemType == 'TSP':
+            self.plotInterval = plotInterval
             case_generator = (lambda: misc.generate_tsp_data(problemArg))
             self.caseManager = Caseman(cfunc=case_generator, cfrac=1.0, tfrac=0.0)
             self.trainingCases = self.caseManager.get_training_cases()
@@ -300,8 +301,8 @@ class SOM:
             nodeLabels[x, y] = nodeLabel
 
     def calc_path_length(self, plot = False):
-        winners = np.ones(len(self.inputs), dtype = np.int32)*(-1)    # array to be filled with the winning neuron for each city
-        for i, input in enumerate(self.inputs):
+        winners = np.ones(len(self.trainingCases), dtype = np.int32)*(-1)    # array to be filled with the winning neuron for each city
+        for i, input in enumerate(self.trainingCases):
             winning_neuron = self.competitive_process(input)
             winners[i] = winning_neuron
         mapCityIndex2OutputIndex = np.stack((np.arange(len(self.trainingCases)), winners), axis = 1)
@@ -383,11 +384,13 @@ class Caseman():
         np.random.shuffle(cases)
         return cases
 
-icpSOM = SOM(problemType = 'ICP', problemArg = 8, gridSize = 22, initialWeightRange = (0,1),
-            epochs = 60, sigma_0 = 6, tau_sigma = 50, eta_0 = 0.1, tau_eta = 1000,
-            plotInterval = 20, testInterval = 5)
+# icpSOM = SOM(problemType = 'ICP', problemArg = 8, gridSize = 22, initialWeightRange = (0,1),
+#             epochs = 60, sigma_0 = 6, tau_sigma = 50, eta_0 = 0.1, tau_eta = 1000,
+#             plotInterval = 20, testInterval = 5)
+#
+# icpSOM.run()
 
-tspSOM = SOM(problemType = 'TSP', problemArg = 7,
+tspSOM = SOM(problemType = 'TSP', problemArg = 7, plotInterval = 3, testInterval = 5,
                epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
 
 tspSOM.run()
