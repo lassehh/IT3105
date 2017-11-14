@@ -205,7 +205,6 @@ class SOM:
         print("Final path length: ", pathLength)
         wait = input("ENTER TO QUIT")
         PLT.close(fig)
-        PLT.pause(0.01)
 
     def run_icp(self):
         # Plot initial node classifications
@@ -300,14 +299,9 @@ class SOM:
             nodeLabel = np.argmax(labelsAccumulator)
             nodeLabels[x, y] = nodeLabel
 
-
-
-
-
-
-    def calc_path_length(self):
-        winners = np.ones(len(self.trainingCases), dtype = np.int32)*(-1)    # array to be filled with the winning neuron for each city
-        for i, input in enumerate(self.trainingCases):
+    def calc_path_length(self, plot = False):
+        winners = np.ones(len(self.inputs), dtype = np.int32)*(-1)    # array to be filled with the winning neuron for each city
+        for i, input in enumerate(self.inputs):
             winning_neuron = self.competitive_process(input)
             winners[i] = winning_neuron
         mapCityIndex2OutputIndex = np.stack((np.arange(len(self.trainingCases)), winners), axis = 1)
@@ -317,9 +311,10 @@ class SOM:
         prevCity = 0
         firstCity = 0
         cityCoordinates = self.caseManager.get_unnormalized_cases()
-        PLT.ion()
-        fig = PLT.figure()
-        PLT.plot(cityCoordinates[:, 0], cityCoordinates[:, 1], 'ro')
+        if plot:
+            PLT.ion()
+            fig = PLT.figure()
+            PLT.plot(cityCoordinates[:, 0], cityCoordinates[:, 1], 'ro')
         # go through the array:
         for j, cityAndOutput in enumerate(mapCityIndex2OutputIndex):
             city, _ = cityAndOutput
@@ -329,20 +324,22 @@ class SOM:
             else:
                 distance += (np.linalg.norm(cityCoordinates[city, :] - cityCoordinates[prevCity, :]))
 
-            xpts = np.append(cityCoordinates[prevCity, 0], cityCoordinates[city, 0])
-            ypts = np.append(cityCoordinates[prevCity, 1], cityCoordinates[city, 1])
-            PLT.plot(xpts, ypts, 'bx--')
-            PLT.show()
-            PLT.pause(0.001)
+            if plot:
+                xpts = np.append(cityCoordinates[prevCity, 0], cityCoordinates[city, 0])
+                ypts = np.append(cityCoordinates[prevCity, 1], cityCoordinates[city, 1])
+                PLT.plot(xpts, ypts, 'bx--')
+                PLT.show()
+                PLT.pause(0.001)
 
             prevCity = city
         distance += (np.linalg.norm(cityCoordinates[firstCity, :] - cityCoordinates[prevCity, :]))
-        xpts = np.append(cityCoordinates[prevCity, 0], cityCoordinates[firstCity, 0])
-        ypts = np.append(cityCoordinates[prevCity, 1], cityCoordinates[firstCity, 1])
-        PLT.plot(xpts, ypts, 'bx--')
-        PLT.show()
-        PLT.pause(0.001)
-        PLT.ioff()
+        if plot:
+            xpts = np.append(cityCoordinates[prevCity, 0], cityCoordinates[firstCity, 0])
+            ypts = np.append(cityCoordinates[prevCity, 1], cityCoordinates[firstCity, 1])
+            PLT.plot(xpts, ypts, 'bx--')
+            PLT.show()
+            PLT.pause(0.001)
+            PLT.ioff()
         return distance
 
 
@@ -390,9 +387,7 @@ icpSOM = SOM(problemType = 'ICP', problemArg = 8, gridSize = 22, initialWeightRa
             epochs = 60, sigma_0 = 6, tau_sigma = 50, eta_0 = 0.1, tau_eta = 1000,
             plotInterval = 20, testInterval = 5)
 
-icpSOM.run()
+tspSOM = SOM(problemType = 'TSP', problemArg = 7,
+               epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
 
-# tspSOM = SOM(problemType = 'TSP', problemArg = 8, gridSize = 10, initialWeightRange = (0,1),
-#                epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
-#
-# tspSOM.run()
+tspSOM.run()
