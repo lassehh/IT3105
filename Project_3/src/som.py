@@ -35,7 +35,9 @@ class SOM:
 
 
 
-    def __init__(self, plotInterval = 10, testInterval = 10, problemType = 'TSP', problemArg = 1, initialWeightRange = (0,1), gridSize = 10, epochs = 200, sigma_0 = 5.0, tau_sigma = 1, eta_0 = 0.1, tau_eta = 1):
+    def __init__(self, plotInterval = 10, testInterval = 10, problemType = 'TSP', problemArg = 1,
+                 initialWeightRange = (0,1), gridSize = 10, epochs = 200, sigma_0 = 5.0,
+                 tau_sigma = 1, eta_0 = 0.1, tau_eta = 1):
         self.sigma_0 = sigma_0
         self.tau_sigma = tau_sigma
         self.eta_0 = eta_0
@@ -78,11 +80,11 @@ class SOM:
 
 
     def weight_initialization(self):
-        self.weights = np.zeros(shape=(self.numOutputs, len(self.trainingCases[0])))
         if self.problemType == "TSP":
+            self.weights = np.zeros(shape=(self.numOutputs, len(self.trainingCases[0])))
             index = 0
-            range = np.arange(0, 2 * math.pi, 2 * math.pi / self.numOutputs)
-            for rad in range:
+            circleRange = np.arange(0, 2 * math.pi, 2 * math.pi / self.numOutputs)
+            for rad in circleRange:
                 x = (math.cos(rad) + 1) / 2
                 y = (math.sin(rad) + 1) / 2
                 self.weights[index, :] = x, y
@@ -144,7 +146,7 @@ class SOM:
             index = int(winner + step) % self.numOutputs
             while(1):
                 T_ji = self.topological_neighbourhood_function(sigma, winner, index)
-                if T_ji < 0.001:
+                if T_ji < 0.01:
                     break
                 else:
                     w_j = self.weights[index, :]
@@ -159,12 +161,13 @@ class SOM:
             while(notVisited):
                 node = notVisited.pop(0)
                 nodeCoordinates = misc.index_list_2_grid(node, self.gridSize)
-                neighbours = misc.find_2d_four_way_neighbours(nodeCoordinates, self.gridSize)
+                neighbours = misc.find_2d_eight_way_neighbours(nodeCoordinates, self.gridSize)
                 for neighbour in neighbours:
                     neighbourIndex = misc.index_grid_2_list(neighbour, self.gridSize)
                     if neighbourIndex not in discovered:
                         T_ji = self.topological_neighbourhood_function(sigma, winner, neighbourIndex)
-                        if T_ji < 0.1:
+                        if T_ji < 0:
+                            notVisited = []
                             break
                         else:
                             w_j = self.weights[neighbourIndex, :]
@@ -224,9 +227,12 @@ class SOM:
             print('Neighbourhood size: \t%5.4f' % (sigma))
 
             # Training: do weight updates with the training cases
+            start = time.clock()
             for i in self.trainingCases:
                 winner = self.competitive_process(i)
                 self.weight_update(eta = eta, sigma = sigma, input = i, winner = winner)
+            end = time.clock()
+            print('Weight update time: \t%5.4f' % (end-start))
 
             # Plot every PLOT_INTVEVAL
             if timeStep % self.plotInterval == 0 and timeStep != 0:
@@ -283,8 +289,9 @@ class SOM:
         return nodeLabels
 
     def fill_in_non_classified(self, nodeLabels, nonLabeledNodes):
-        labelsAccumulator = np.zeros(10)
+        np.random.shuffle(nonLabeledNodes)  # Randomly shuffle all cases
         for nonLabeledNode in nonLabeledNodes:
+            labelsAccumulator = np.zeros(10)
             x, y = nonLabeledNode
             neighbours = misc.find_2d_eight_way_neighbours((x, y), self.gridSize)
             for neighbour in neighbours:
@@ -293,12 +300,13 @@ class SOM:
                 if neighbourLabel == -1:
                     continue
                 else:
-                    if (abs(neighbourX) + abs(neighbourY)) == 1:
-                        labelsAccumulator[int(neighbourLabel)] += 1
-                    elif (abs(neighbourX) + abs(neighbourY)) == 2:
-                        labelsAccumulator[int(neighbourLabel)] += 0.5
+                    labelsAccumulator[int(neighbourLabel)] += 1
+
             nodeLabel = np.argmax(labelsAccumulator)
-            nodeLabels[x, y] = nodeLabel
+            if labelsAccumulator[nodeLabel] == 0:
+                nodeLabels[x, y] = -1
+            else:
+                nodeLabels[x, y] = nodeLabel
 
     def calc_path_length(self, plot = False):
         winners = np.ones(len(self.trainingCases), dtype = np.int32)*(-1)    # array to be filled with the winning neuron for each city
@@ -384,13 +392,13 @@ class Caseman():
         np.random.shuffle(cases)
         return cases
 
-# icpSOM = SOM(problemType = 'ICP', problemArg = 8, gridSize = 22, initialWeightRange = (0,1),
-#             epochs = 60, sigma_0 = 6, tau_sigma = 50, eta_0 = 0.1, tau_eta = 1000,
-#             plotInterval = 20, testInterval = 5)
+icpSOM = SOM(problemType = 'ICP', problemArg = 8, gridSize = 15, initialWeightRange = (0,1),
+            epochs = 18, sigma_0 = 20, tau_sigma = 3, eta_0 = 0.2, tau_eta = 100,
+            plotInterval = 3, testInterval = 1)
+
+icpSOM.run()
+
+# tspSOM = SOM(problemType = 'TSP', problemArg = 7, plotInterval = 3, testInterval = 5,
+#                epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
 #
-# icpSOM.run()
-
-tspSOM = SOM(problemType = 'TSP', problemArg = 7, plotInterval = 3, testInterval = 5,
-               epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
-
-tspSOM.run()
+# tspSOM.run()

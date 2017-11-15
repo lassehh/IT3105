@@ -8,7 +8,7 @@ import time
 from tensorflow.examples.tutorials.mnist import input_data
 
 labelColorDict = {0: 'b', 1: 'g', 2: 'y', 3: 'r', 4: 'pink', 5: 'm', 6:
-                  'cyan', 7: 'grey', 8: 'black', 9: 'orange', 10: 'white'}
+                  'cyan', 7: 'grey', 8: 'black', 9: 'orange', -1: 'white'}
 
 
 
@@ -87,14 +87,29 @@ def update_tsp_plot(fig, ax, background, weights, weightPts,
 
 
 def draw_image_classification_graph(nodeLabelsMatrix, gridSize, numberOfLabels = 9):
+    #G = nx.hexagonal_lattice_graph(gridSize, gridSize)
     G = nx.grid_2d_graph(gridSize, gridSize)
+    #G = nx.triangular_lattice_graph(gridSize, gridSize)
     pos = dict((n, n) for n in G.nodes())
+
+    for n in G:
+        x, y = n
+        # if (x + 1 < gridSize and y + 1 < gridSize):  # NE
+        #     G.add_edge(n, (x - 1, y - 1))
+        # if (x - 1 >= 0 and y + 1 < gridSize):  # NW
+        #     G.add_edge(n, (x - 1, y - 1))
+        if (x - 1 >= 0 and y - 1 >= 0):  # SW
+            G.add_edge(n, (x - 1, y - 1))
+        if (x + 1 < gridSize and y - 1 >= 0):  # SE
+            G.add_edge(n, (x + 1, y - 1))
+
+
 
     for node in G:
         labelNumber = nodeLabelsMatrix[node]
         labelColor = labelColorDict[labelNumber]
         nx.draw_networkx_nodes(G, pos, nodelist = [node],
-                               node_color = labelColor, node_size = 600, alpha = 0.8)
+                               node_color = labelColor, node_size = 300, alpha = 1)
 
     nx.draw_networkx_edges(G, pos, width=1.0, alpha=0.5)
     plt.axis('off')
