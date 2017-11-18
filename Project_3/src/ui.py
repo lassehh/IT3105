@@ -9,14 +9,14 @@ Class: UI
 """
 class Ui:
     state = None                                                                        # Which menu/submenu the program is currently running
-    stateDict = {0: 'solveTSP', 1: 'testMNIST', 2: 'testOTHER'}                         # Submenus
+    stateDict = {0: 'testTsp', 1: 'bestTsp', 2: 'testIcp', 3: 'bestIcp', 4: 'exit'}                         # Submenus
     menuIndexPointer = 0                                                                # The graphical pointer index
 
     # Text/graphical stuff
     pointer = '>>'
-    headerText = '### UI - PROJECT 3 DEMO ###\n'
-    initMenuOptions = { 0: 'Solve TSP with a SOM', 1: 'Test trained SOM on MNIST cases', 2: 'N/A.'
-        , 3: 'Exit program.'}
+    headerText = '### SOM UI - PROJECT 3 DEMO ###\n'
+    initMenuOptions = { 0: 'TEST scenarios on TSP', 1: 'RUN BEST scenario on TSP',
+                        2: 'TEST scenarios on ICP', 3: 'RUN BEST scenario on ICP', 4: 'Exit program.'}
 
     def __init__(self, state = 'options'):
         self.state = state
@@ -29,9 +29,10 @@ class Ui:
         exit = False
         while(not exit):
             if(self.state == 'options'): self.options_menu()
-            if(self.state == 'solveTSP'): pass
-            if(self.state == 'testMNIST'): pass
-            if(self.state == 'testOTHER'): pass
+            if(self.state == 'testTsp'): self.test_tsp_interface()
+            if(self.state == 'bestTcp'): self.best_tsp_interface()
+            if(self.state == 'testIcp'): self.test_icp_interface()
+            if(self.state == 'bestIcp'): self.best_icp_interface()
             if(self.state == "exit"):
                 exit = True
                 print("\nExiting program..")
@@ -61,31 +62,124 @@ class Ui:
             time.sleep(0.01)
 
 
-    # Description:
-    # Input: None
-    # Output: None
-    def load_run_scenario_menu(self):
+    def best_tsp_interface(self):
         os.system('cls' if os.name == 'nt' else 'clear')
         print(self.headerText)
-        print("--- LOAD BEST PARAMETER SCENARIO --- \n")
-        print("Supported config formats: .txt\n")
-        print("Available scenarios:\n")
-        for root, dirs, files in os.walk("best_param_networks"):
-            for file in files:
-                if file.endswith('.txt'):
-                    print(file)
+        print("Solving the TSP problem with the best knowns parameters...")
+        time.sleep(0.7)
 
-        selectDataSource = input("\nSelect data source: ")
-        confirmation = input("Abort data source selection [y]: ")
-        if confirmation == 'y': pass
-        else:
-            pass
-            #TODO
+        problemNumber = input("Choose which problem to solve: ")
 
+        time.sleep(0.7)
+        confirmInput = input("Proceed with the chosen parameters[y/n]? ")
+        if confirmInput == 'y':
+            if (problemNumber == 1):
+                tspSOM = som.SOM(problemType='TSP', problemArg=int(problemNumber), plotInterval=3, testInterval=5,
+                                 epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
+                tspSOM.run()
+            elif (problemNumber == 2):
+                tspSOM = som.SOM(problemType='TSP', problemArg=int(problemNumber), plotInterval=3, testInterval=5,
+                             epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
+                tspSOM.run()
+            elif (problemNumber == 3):
+                tspSOM = som.SOM(problemType='TSP', problemArg=int(problemNumber), plotInterval=3, testInterval=5,
+                             epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
+                tspSOM.run()
+            elif (problemNumber == 4):
+                tspSOM = som.SOM(problemType='TSP', problemArg=int(problemNumber), plotInterval=3, testInterval=5,
+                             epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
+                tspSOM.run()
+            elif (problemNumber == 5):
+                tspSOM = som.SOM(problemType='TSP', problemArg=int(problemNumber), plotInterval=3, testInterval=5,
+                             epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
+                tspSOM.run()
+            elif (problemNumber == 6):
+                tspSOM = som.SOM(problemType='TSP', problemArg=int(problemNumber), plotInterval=3, testInterval=5,
+                             epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
+                tspSOM.run()
+            elif (problemNumber == 7):
+                tspSOM = som.SOM(problemType='TSP', problemArg=int(problemNumber), plotInterval=3, testInterval=5,
+                             epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
+                tspSOM.run()
+            elif (problemNumber == 8):
+                tspSOM = som.SOM(problemType='TSP', problemArg=int(problemNumber), plotInterval=3, testInterval=5,
+                             epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
+                tspSOM.run()
 
-        waitForExit = input("\n[Press enter to return to the main menu..]")
+        wait = input("PRESS ENTER TO EXIT TO MAIN MENU")
+        self.state = "options"
+        pass
+
+    def best_icp_interface(self):
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print(self.headerText)
+        print("Solving the MNIST problem with the best knowns parameters...")
+        time.sleep(1.5)
+
+        icpSOM = som.SOM(problemType='ICP', problemArg=None, gridSize=40, initialWeightRange=(0, 1),
+                         epochs=1, sigma_0=16, tau_sigma=1400, eta_0=0.6, tau_eta=2000,
+                         plotInterval=3501, testInterval=3501, fillIn=True, nmbrOfCases=3500)
+        icpSOM.run()
+        wait = input("PRESS ENTER TO EXIT TO MAIN MENU")
         self.state = "options"
 
+
+    def test_tsp_interface(self):
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print(self.headerText)
+        print("--- TESTING TCP SCENARIO ---")
+
+        problemNumber = input('Choose which problem (number): ')
+        epochs = input("Epochs: ")
+        eta = input("Initial learning rate: ")
+        tauEta = input("Learning rate time constant: ")
+        sigma = input("Initial neighbourhood size: ")
+        tauSigma = input("Neighbourhood time constant: ")
+        plotInterval = input("Plot interval: ")
+
+        time.sleep(0.7)
+        confirmInput = input("Proceed with the chosen parameters[y/n]? ")
+        if confirmInput == 'y':
+            tspSOM = som.SOM(problemType='TSP', problemArg=int(problemNumber),
+                         epochs=int(epochs), sigma_0=float(sigma), tau_sigma=float(tauSigma), eta_0=float(eta),
+                         tau_eta=float(tauEta), plotInterval=int(plotInterval))
+
+            tspSOM.run()
+        wait = input("PRESS ENTER TO EXIT TO MAIN MENU")
+        self.state = "options"
+
+
+    def test_icp_interface(self):
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print(self.headerText)
+        print("--- TESTING ICP SCENARIO ---")
+
+        epochs = input("Epochs: ")
+        gridSize = input("Grid size: ")
+        eta = input("Initial learning rate: ")
+        tauEta = input("Learning rate time constant: ")
+        sigma = input("Initial neighbourhood size: ")
+        tauSigma = input("Neighbourhood time constant: ")
+        plotInterval = input("Plot interval: ")
+        testInterval = input("Test interval: ")
+        nmbrOfCases = input("Number of training cases to use: ")
+        fillIn = input("Fill in non-classified nodes wrt neighbours[y/n]: ")
+        if fillIn == "y":
+            fillIn = True
+        else:
+            fillIn = False
+
+        time.sleep(0.7)
+        confirmInput = input("Proceed with the chosen parameters[y/n]? ")
+        if confirmInput == 'y':
+            icpSOM = som.SOM(problemType='ICP', problemArg=None, gridSize=int(gridSize), initialWeightRange=(0, 1),
+                             epochs=int(epochs), sigma_0=float(sigma), tau_sigma=float(tauSigma), eta_0=float(eta),
+                             tau_eta=float(tauEta), plotInterval=int(plotInterval), testInterval=int(testInterval),
+                             fillIn=True, nmbrOfCases=int(nmbrOfCases))
+            icpSOM.run()
+
+        wait = input("PRESS ENTER TO EXIT TO MAIN MENU")
+        self.state = "options"
 
 
 

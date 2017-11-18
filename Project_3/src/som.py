@@ -2,6 +2,7 @@ import matplotlib.pyplot as PLT
 import numpy as np
 import miscfunctions as misc
 import time
+import random
 import math
 
 
@@ -37,7 +38,7 @@ class SOM:
 
     def __init__(self, plotInterval = 10, testInterval = 10, problemType = 'TSP', problemArg = 1,
                  initialWeightRange = (0,1), gridSize = 10, epochs = 200, sigma_0 = 5.0,
-                 tau_sigma = 1, eta_0 = 0.1, tau_eta = 1):
+                 tau_sigma = 1, eta_0 = 0.1, tau_eta = 1, fillIn = False, nmbrOfCases = None):
         self.sigma_0 = sigma_0
         self.tau_sigma = tau_sigma
         self.eta_0 = eta_0
@@ -46,12 +47,15 @@ class SOM:
         self.initialWeightRange = initialWeightRange
         self.problemType = problemType
         if problemType == 'ICP':
+            self.fillIn = fillIn
             # Plot and testing intervals
             self.plotInterval = plotInterval
             self.testInterval = testInterval
             # Generate training and testing cases
             case_generator = (lambda: misc.generate_mnist_data())
-            self.caseManager = Caseman(cfunc=case_generator, cfrac=0.023, tfrac=0.50)
+            caseFrac = (nmbrOfCases+600) / 55000
+            testFrac = 600 / (600 + nmbrOfCases)
+            self.caseManager = Caseman(cfunc=case_generator, cfrac=caseFrac, tfrac=testFrac)
             trainingCases = self.caseManager.get_training_cases()
             self.trainingCaseLabels = trainingCases[:, -1]
             self.trainingCases = trainingCases[:, :-1]
@@ -75,8 +79,6 @@ class SOM:
         self.timeStep = 0
         self.epochs = epochs
         self.weight_initialization()
-
-
 
 
     def weight_initialization(self):
@@ -166,7 +168,7 @@ class SOM:
                     neighbourIndex = misc.index_grid_2_list(neighbour, self.gridSize)
                     if neighbourIndex not in discovered:
                         T_ji = self.topological_neighbourhood_function(sigma, winner, neighbourIndex)
-                        if T_ji < 0:
+                        if T_ji < 0.:
                             notVisited = []
                             break
                         else:
@@ -182,7 +184,7 @@ class SOM:
         if self.problemType == "TSP":
             self.run_tsp()
         elif self.problemType == "ICP":
-            self.run_icp()
+            self.run_icp2()
         else:
             raise AssertionError("Problem type \'", self.problemType, "\' is not defined.")
 
@@ -207,13 +209,13 @@ class SOM:
 
         pathLength = self.calc_path_length()
         print("Final path length: ", pathLength)
-        wait = input("ENTER TO QUIT")
         PLT.close(fig)
 
     def run_icp(self):
+        runStartTime = time.clock()
         # Plot initial node classifications
         print("Plotting initial node labels..")
-        self.nodeLabels = self.decide_nodes_classification()
+        self.nodeLabels = self.decide_nodes_classification(fillIn = False)
         misc.draw_image_classification_graph(nodeLabelsMatrix=self.nodeLabels, gridSize=int(self.gridSize))
 
         accuracyHistory = []
@@ -234,25 +236,79 @@ class SOM:
             end = time.clock()
             print('Weight update time: \t%5.4f' % (end-start))
 
-            # Plot every PLOT_INTVEVAL
-            if timeStep % self.plotInterval == 0 and timeStep != 0:
-                self.nodeLabels = self.decide_nodes_classification()
+            # Plot every plot interval
+            if (timeStep % self.plotInterval == 0 or timeStep == self.epochs) and timeStep != 0:
+                self.nodeLabels = self.decide_nodes_classification(fillIn = True)
                 misc.draw_image_classification_graph(nodeLabelsMatrix=self.nodeLabels, gridSize=int(self.gridSize))
 
-            # Test accuracy of the classificator every TEST_INTERVAL
-            if timeStep % self.testInterval == 0 and timeStep != 0:
-                self.nodeLabels = self.decide_nodes_classification()
+            # Test accuracy of the classificator every test interval
+            if (timeStep % self.testInterval == 0 or timeStep == self.epochs) and timeStep != 0:
+                self.nodeLabels = self.decide_nodes_classification(fillIn = True)
                 accuracy = self.test_icp_accuracy(self.trainingCases, self.trainingCaseLabels, self.nodeLabels, caseType = "Training")
                 accuracyHistory.append((timeStep, accuracy)) #x,y plot
 
+            # Random shuffle the cases for next epoch
+            # np.random.set_state(self.caseManager.state)
+            # np.random.shuffle(self.trainingCases)
+            # np.random.shuffle(self.trainingCaseLabels)
+
         # Final testing on the testing cases
-        self.nodeLabels = self.decide_nodes_classification()
         self.test_icp_accuracy(self.testingCases, self.testingCaseLabels, self.nodeLabels, caseType="Final testing")
         misc.plot_training_history(accuracyHistory, xtitle = "Timestep [ ]", ytitle = 'Accuracy [%]', title = "SOM ICP ACCURACY")
 
+        runEndTime = time.clock()
+        print("Run time : " , runEndTime - runStartTime)
         wait = input("ENTER TO QUIT")
         #PLT.close(fig)
         #PLT.pause(0.01)
+
+
+    def run_icp2(self):
+        runStartTime = time.clock()
+        # Plot initial node classifications
+        print("Plotting initial node labels..")
+        self.nodeLabels = self.decide_nodes_classification(fillIn=False)
+        misc.draw_image_classification_graph(nodeLabelsMatrix=self.nodeLabels, gridSize=int(self.gridSize))
+
+        accuracyHistory = []
+        for epoch in range(0, self.epochs):
+            for case in self.trainingCases:
+                eta = self.learning_rate_function()
+                sigma = self.neighbourhood_size_function()
+
+                if(self.timeStep % 10 == 0):
+                    print(">> TIMESTEP: ", self.timeStep)
+                    print('Learning rate: \t\t\t%5.4f' % (eta))
+                    print('Neighbourhood size: \t%5.4f' % (sigma))
+
+                # Training: do weight updates with the training cases
+                winner = self.competitive_process(case)
+                self.weight_update(eta=eta, sigma=sigma, input=case, winner=winner)
+
+                # If it's time to plot or test accuracy, find each nodes classification
+                if ((self.timeStep + 1) % self.plotInterval == 0) or ((self.timeStep + 1) % self.testInterval == 0):
+                    self.nodeLabels = self.decide_nodes_classification(fillIn=self.fillIn)
+
+                # Plot every plot interval
+                if ((self.timeStep + 1) % self.plotInterval == 0 and self.timeStep > 0):
+                    misc.draw_image_classification_graph(nodeLabelsMatrix=self.nodeLabels, gridSize=int(self.gridSize))
+
+                # Test accuracy of the classificator every test interval
+                if ((self.timeStep + 1) % self.testInterval == 0 and self.timeStep > 0):
+                    accuracy = self.test_icp_accuracy(self.trainingCases, self.trainingCaseLabels, self.nodeLabels, caseType="Training")
+                    accuracyHistory.append((self.timeStep, accuracy))  # x,y plot
+                self.timeStep += 1
+
+        # Final testing on the testing cases
+        self.nodeLabels = self.decide_nodes_classification(fillIn=self.fillIn)
+        misc.draw_image_classification_graph(nodeLabelsMatrix=self.nodeLabels, gridSize=int(self.gridSize))
+        self.test_icp_accuracy(self.trainingCases, self.trainingCaseLabels, self.nodeLabels, caseType="\nFinal Training")
+        self.test_icp_accuracy(self.testingCases, self.testingCaseLabels, self.nodeLabels, caseType="Final testing")
+        misc.plot_training_history(accuracyHistory, xtitle="Timestep [ ]", ytitle='Accuracy [%]', title="SOM ICP ACCURACY")
+
+        runEndTime = time.clock()
+        print("Run time : ", runEndTime - runStartTime)
+        time.sleep(0.6)
 
 
     def test_icp_accuracy(self, cases, casesLabels, nodeLabels, caseType):
@@ -265,11 +321,11 @@ class SOM:
                 correct += 1.0
             else: incorrect += 1.0
         accuracy = (correct/(incorrect+correct))*100.0
-        print('%s accuracy: \t\t%d %%' % (caseType, accuracy))
+        print('%s accuracy: %.2f %%' % (caseType, accuracy))
         return accuracy
 
 
-    def decide_nodes_classification(self):
+    def decide_nodes_classification(self, fillIn = True):
         winnerMatrix = np.zeros((self.gridSize, self.gridSize, 10))
         for index, input in enumerate(self.trainingCases):
             label = int(self.trainingCaseLabels[index])
@@ -285,7 +341,8 @@ class SOM:
                     nodeLabels[x,y] = -1
                     nonLabeledNodes.append((x,y))
                 else: nodeLabels[x,y] = label
-        self.fill_in_non_classified(nodeLabels, nonLabeledNodes)
+        if fillIn == True:
+            nodeLabels = self.fill_in_non_classified(nodeLabels, nonLabeledNodes)
         return nodeLabels
 
     def fill_in_non_classified(self, nodeLabels, nonLabeledNodes):
@@ -301,12 +358,13 @@ class SOM:
                     continue
                 else:
                     labelsAccumulator[int(neighbourLabel)] += 1
-
             nodeLabel = np.argmax(labelsAccumulator)
             if labelsAccumulator[nodeLabel] == 0:
                 nodeLabels[x, y] = -1
             else:
                 nodeLabels[x, y] = nodeLabel
+        return nodeLabels
+
 
     def calc_path_length(self, plot = False):
         winners = np.ones(len(self.trainingCases), dtype = np.int32)*(-1)    # array to be filled with the winning neuron for each city
@@ -392,13 +450,43 @@ class Caseman():
         np.random.shuffle(cases)
         return cases
 
-icpSOM = SOM(problemType = 'ICP', problemArg = 8, gridSize = 15, initialWeightRange = (0,1),
-            epochs = 18, sigma_0 = 20, tau_sigma = 3, eta_0 = 0.2, tau_eta = 100,
-            plotInterval = 3, testInterval = 1)
+# SOM 2nd BEST: 95% training, 75/75/75% testing
+# grid 30, epochs 20, sigma0 16, tausigma 9 eta0 0.2
 
-icpSOM.run()
+# SOM this also worked pretty well
+# icpSOM = SOM(problemType = 'ICP', problemArg = 8, gridSize = 30, initialWeightRange = (0.49,0.51),
+#             epochs = 5, sigma_0 = 16, tau_sigma = 1, eta_0 = 0.5, tau_eta = 6000,
+#             plotInterval = 20, testInterval = 3)
+
+
+
+
+# SOM BEST: 96% training, 76/82/80/80/78/79/74/82% testing
+# icpSOM = SOM(problemType = 'ICP', problemArg = 8, gridSize = 40, initialWeightRange = (0.49,0.51),
+#             epochs = 10, sigma_0 = 20, tau_sigma = 4, eta_0 = 0.2, tau_eta = 6000,
+#             plotInterval = 10, testInterval = 2)
+
+#with run_icp2 BESTBESTBESTBEST 17-11-2017:2220
+#icpSOM = SOM(problemType = 'ICP', problemArg = None, gridSize = 40, initialWeightRange = (0,1),
+            # epochs = 1, sigma_0 = 16, tau_sigma = 1400, eta_0 = 0.6, tau_eta = 2000,
+            # plotInterval = 3500, testInterval = 3500, fillIn = True, nmbrOfCases = 3500)
+# icpSOM = SOM(problemType = 'ICP', problemArg = None, gridSize = 10, initialWeightRange = (0s,1),
+#             epochs = 50, sigma_0 = 5, tau_sigma = 50*250, eta_0 = 0.1, tau_eta = 50*30000,
+#             plotInterval = 10000, testInterval = 10000, fillIn = True, nmbrOfCases = 600)
+#icpSOM.run()
 
 # tspSOM = SOM(problemType = 'TSP', problemArg = 7, plotInterval = 3, testInterval = 5,
-#                epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000)
+#                epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000, fillIn = True)
 #
 # tspSOM.run()
+
+
+
+#
+#
+#
+#
+#icpSOM = SOM(problemType = 'ICP', problemArg = None, gridSize = 40, initialWeightRange = (0,1),
+            # epochs = 1, sigma_0 = 16, tau_sigma = 1400, eta_0 = 0.6, tau_eta = 2000,
+            # plotInterval = 3500, testInterval = 3500, fillIn = True, nmbrOfCases = 3500)
+#icpSOM.run()

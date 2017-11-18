@@ -87,30 +87,21 @@ def update_tsp_plot(fig, ax, background, weights, weightPts,
 
 
 def draw_image_classification_graph(nodeLabelsMatrix, gridSize, numberOfLabels = 9):
-    #G = nx.hexagonal_lattice_graph(gridSize, gridSize)
     G = nx.grid_2d_graph(gridSize, gridSize)
-    #G = nx.triangular_lattice_graph(gridSize, gridSize)
     pos = dict((n, n) for n in G.nodes())
-
     for n in G:
         x, y = n
-        # if (x + 1 < gridSize and y + 1 < gridSize):  # NE
-        #     G.add_edge(n, (x - 1, y - 1))
-        # if (x - 1 >= 0 and y + 1 < gridSize):  # NW
-        #     G.add_edge(n, (x - 1, y - 1))
         if (x - 1 >= 0 and y - 1 >= 0):  # SW
             G.add_edge(n, (x - 1, y - 1))
         if (x + 1 < gridSize and y - 1 >= 0):  # SE
             G.add_edge(n, (x + 1, y - 1))
-
-
-
+    labels = {}
     for node in G:
         labelNumber = nodeLabelsMatrix[node]
         labelColor = labelColorDict[labelNumber]
-        nx.draw_networkx_nodes(G, pos, nodelist = [node],
-                               node_color = labelColor, node_size = 300, alpha = 1)
-
+        labels[node] = int(labelNumber)
+        nx.draw_networkx_nodes(G, pos, nodelist = [node], node_color = labelColor, node_size = 200, alpha = 0.65)
+    nx.draw_networkx_labels(G, pos, labels, font_size=12)
     nx.draw_networkx_edges(G, pos, width=1.0, alpha=0.5)
     plt.axis('off')
     plt.show()
@@ -169,7 +160,6 @@ def find_2d_eight_way_neighbours(coordinates, gridSize):
         neighbours.append((x + 1, y - 1))
     return neighbours
 
-
 def generate_mnist_data():
     data_dir = '../data/mnist'
     mnist = input_data.read_data_sets(data_dir, one_hot=False)
@@ -187,7 +177,6 @@ def simple_plot(yvals,xvals=None,xtitle='X',ytitle='Y',title='Y = F(X)', label =
     plt.draw()
     plt.pause(.001)
 
-
 def plot_training_history(error_hist, validation_hist=[], xtitle='Epoch', ytitle='Error', title='History', fig=True):
     # PLT.ion()
     if fig: plt.figure()
@@ -199,7 +188,3 @@ def plot_training_history(error_hist, validation_hist=[], xtitle='Epoch', ytitle
         simple_plot([p[1] for p in validation_hist], [p[0] for p in validation_hist], xtitle=xtitle, ytitle=ytitle,
                     title=title, label="Validation loss")
 
-#gridIndex = index_list_2_grid(16, 4)
-#print(gridIndex)
-#draw_image_classification_graph(5)
-# generate_mnist_data()
