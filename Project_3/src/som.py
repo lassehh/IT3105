@@ -209,6 +209,7 @@ class SOM:
 
         pathLength = self.calc_path_length()
         print("Final path length: ", pathLength)
+        wait = input("PRESS ENTER TO CLOSE PLOT")
         PLT.close(fig)
 
     def run_icp(self):
@@ -475,7 +476,7 @@ class Caseman():
 #             plotInterval = 10000, testInterval = 10000, fillIn = True, nmbrOfCases = 600)
 #icpSOM.run()
 
-# tspSOM = SOM(problemType = 'TSP', problemArg = 7, plotInterval = 3, testInterval = 5,
+# tspSOM = SOM(problemType = 'TSP', problemArg = 8, plotInterval = 3, testInterval = 5,
 #                epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000, fillIn = True)
 #
 # tspSOM.run()

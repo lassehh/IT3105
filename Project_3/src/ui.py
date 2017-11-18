@@ -30,7 +30,7 @@ class Ui:
         while(not exit):
             if(self.state == 'options'): self.options_menu()
             if(self.state == 'testTsp'): self.test_tsp_interface()
-            if(self.state == 'bestTcp'): self.best_tsp_interface()
+            if(self.state == 'bestTsp'): self.best_tsp_interface()
             if(self.state == 'testIcp'): self.test_icp_interface()
             if(self.state == 'bestIcp'): self.best_icp_interface()
             if(self.state == "exit"):
@@ -65,45 +65,46 @@ class Ui:
     def best_tsp_interface(self):
         os.system('cls' if os.name == 'nt' else 'clear')
         print(self.headerText)
-        print("Solving the TSP problem with the best knowns parameters...")
+        print("Solving the TSP problem with the best known parameters...")
         time.sleep(0.7)
 
         problemNumber = input("Choose which problem to solve: ")
+        problemNumber = int(problemNumber)
 
         time.sleep(0.7)
         confirmInput = input("Proceed with the chosen parameters[y/n]? ")
         if confirmInput == 'y':
             if (problemNumber == 1):
-                tspSOM = som.SOM(problemType='TSP', problemArg=int(problemNumber), plotInterval=3, testInterval=5,
+                tspSOM = som.SOM(problemType='TSP', problemArg=problemNumber, plotInterval=3, testInterval=5,
                                  epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
                 tspSOM.run()
             elif (problemNumber == 2):
-                tspSOM = som.SOM(problemType='TSP', problemArg=int(problemNumber), plotInterval=3, testInterval=5,
-                             epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
+                tspSOM = som.SOM(problemType='TSP', problemArg=problemNumber, plotInterval=3, testInterval=5,
+                                 epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
                 tspSOM.run()
             elif (problemNumber == 3):
-                tspSOM = som.SOM(problemType='TSP', problemArg=int(problemNumber), plotInterval=3, testInterval=5,
-                             epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
+                tspSOM = som.SOM(problemType='TSP', problemArg=problemNumber, plotInterval=3, testInterval=5,
+                                 epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
                 tspSOM.run()
             elif (problemNumber == 4):
-                tspSOM = som.SOM(problemType='TSP', problemArg=int(problemNumber), plotInterval=3, testInterval=5,
-                             epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
+                tspSOM = som.SOM(problemType='TSP', problemArg=problemNumber, plotInterval=3, testInterval=5,
+                                 epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
                 tspSOM.run()
             elif (problemNumber == 5):
-                tspSOM = som.SOM(problemType='TSP', problemArg=int(problemNumber), plotInterval=3, testInterval=5,
-                             epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
+                tspSOM = som.SOM(problemType='TSP', problemArg=problemNumber, plotInterval=3, testInterval=5,
+                                 epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
                 tspSOM.run()
             elif (problemNumber == 6):
-                tspSOM = som.SOM(problemType='TSP', problemArg=int(problemNumber), plotInterval=3, testInterval=5,
-                             epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
+                tspSOM = som.SOM(problemType='TSP', problemArg=problemNumber, plotInterval=3, testInterval=5,
+                                 epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
                 tspSOM.run()
             elif (problemNumber == 7):
-                tspSOM = som.SOM(problemType='TSP', problemArg=int(problemNumber), plotInterval=3, testInterval=5,
-                             epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
+                tspSOM = som.SOM(problemType='TSP', problemArg=problemNumber, plotInterval=3, testInterval=5,
+                                 epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
                 tspSOM.run()
             elif (problemNumber == 8):
-                tspSOM = som.SOM(problemType='TSP', problemArg=int(problemNumber), plotInterval=3, testInterval=5,
-                             epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
+                tspSOM = som.SOM(problemType='TSP', problemArg=problemNumber, plotInterval=3, testInterval=5,
+                                 epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
                 tspSOM.run()
 
         wait = input("PRESS ENTER TO EXIT TO MAIN MENU")
@@ -113,7 +114,7 @@ class Ui:
     def best_icp_interface(self):
         os.system('cls' if os.name == 'nt' else 'clear')
         print(self.headerText)
-        print("Solving the MNIST problem with the best knowns parameters...")
+        print("Solving the MNIST problem with the best known parameters...")
         time.sleep(1.5)
 
         icpSOM = som.SOM(problemType='ICP', problemArg=None, gridSize=40, initialWeightRange=(0, 1),
