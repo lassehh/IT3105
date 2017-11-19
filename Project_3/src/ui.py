@@ -65,47 +65,40 @@ class Ui:
     def best_tsp_interface(self):
         os.system('cls' if os.name == 'nt' else 'clear')
         print(self.headerText)
-        print("Solving the TSP problem with the best known parameters...")
-        time.sleep(0.7)
+        print("--- LOAD BEST PARAMETER SCENARIO FOR TSP --- \n")
+        print("Supported config formats: .txt\n")
+        print("Available scenarios:\n")
+        for root, dirs, files in os.walk("../configsTSP"):
+            for file in files:
+                if file.endswith('.txt'):
+                    print(file)
 
-        problemNumber = input("Choose which problem to solve: ")
-        problemNumber = int(problemNumber)
-
-        time.sleep(0.7)
+        fileName = input("\nSelect data source: ")
         confirmInput = input("Proceed with the chosen parameters[y/n]? ")
         if confirmInput == 'y':
-            if (problemNumber == 1):
-                tspSOM = som.SOM(problemType='TSP', problemArg=problemNumber, plotInterval=3, testInterval=5,
-                                 epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
-                tspSOM.run()
-            elif (problemNumber == 2):
-                tspSOM = som.SOM(problemType='TSP', problemArg=problemNumber, plotInterval=3, testInterval=5,
-                                 epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
-                tspSOM.run()
-            elif (problemNumber == 3):
-                tspSOM = som.SOM(problemType='TSP', problemArg=problemNumber, plotInterval=3, testInterval=5,
-                                 epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
-                tspSOM.run()
-            elif (problemNumber == 4):
-                tspSOM = som.SOM(problemType='TSP', problemArg=problemNumber, plotInterval=3, testInterval=5,
-                                 epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
-                tspSOM.run()
-            elif (problemNumber == 5):
-                tspSOM = som.SOM(problemType='TSP', problemArg=problemNumber, plotInterval=3, testInterval=5,
-                                 epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
-                tspSOM.run()
-            elif (problemNumber == 6):
-                tspSOM = som.SOM(problemType='TSP', problemArg=problemNumber, plotInterval=3, testInterval=5,
-                                 epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
-                tspSOM.run()
-            elif (problemNumber == 7):
-                tspSOM = som.SOM(problemType='TSP', problemArg=problemNumber, plotInterval=3, testInterval=5,
-                                 epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
-                tspSOM.run()
-            elif (problemNumber == 8):
-                tspSOM = som.SOM(problemType='TSP', problemArg=problemNumber, plotInterval=3, testInterval=5,
-                                 epochs=400, sigma_0=5.0, tau_sigma=100, eta_0=0.3, tau_eta=2000)
-                tspSOM.run()
+            with open('../configsTSP/' + fileName, 'r') as f:
+                for paramLine in f:
+                    paramLine = paramLine.strip("\n")
+                    paramLine = paramLine.split(",")
+                    if (paramLine[0] == ''):
+                        continue  # Skip empty lines
+                    elif (paramLine[0][0] == '#'):
+                        continue  # Skip comments
+                    else:
+                        paramName = paramLine[0]
+                        paramLine.pop(0)
+                        if paramName == 'problemNumber': problemNumber = int(paramLine[0])
+                        elif paramName == 'plotInterval': plotInterval = int(paramLine[0])
+                        elif paramName == 'epochs': epochs = int(paramLine[0])
+                        elif paramName == 'sigma_0': sigma_0 = float(paramLine[0])
+                        elif paramName == 'tau_sigma': tau_sigma = int(paramLine[0])
+                        elif paramName == 'eta_0': eta_0 = float(paramLine[0])
+                        elif paramName == 'tau_eta': tau_eta = int(paramLine[0])
+                        else: raise AssertionError("Parameter: " + paramName + ", is not a valid parameter name.")
+            tspSOM = som.SOM(problemType='TSP', problemArg=problemNumber, plotInterval=plotInterval,
+                             epochs=epochs, sigma_0=sigma_0, tau_sigma=tau_sigma, eta_0=eta_0, tau_eta=tau_eta)
+            tspSOM.run()
+
 
         wait = input("PRESS ENTER TO EXIT TO MAIN MENU")
         self.state = "options"
@@ -113,14 +106,45 @@ class Ui:
 
     def best_icp_interface(self):
         os.system('cls' if os.name == 'nt' else 'clear')
-        print(self.headerText)
-        print("Solving the MNIST problem with the best known parameters...")
-        time.sleep(1.5)
+        print("--- LOAD BEST PARAMETER SCENARIO FOR ICP --- \n")
+        print("Supported config formats: .txt\n")
+        print("Available scenarios:\n")
+        for root, dirs, files in os.walk("../configsICP"):
+            for file in files:
+                if file.endswith('.txt'):
+                    print(file)
 
-        icpSOM = som.SOM(problemType='ICP', problemArg=None, gridSize=40, initialWeightRange=(0, 1),
-                         epochs=1, sigma_0=16, tau_sigma=1400, eta_0=0.6, tau_eta=2000,
-                         plotInterval=3501, testInterval=3501, fillIn=True, nmbrOfCases=3500)
-        icpSOM.run()
+        fileName = input("\nSelect data source: ")
+        confirmInput = input("Proceed with the chosen parameters[y/n]? ")
+        if confirmInput == 'y':
+            with open('../configsICP/' + fileName, 'r') as f:
+                for paramLine in f:
+                    paramLine = paramLine.strip("\n")
+                    paramLine = paramLine.split(",")
+                    if (paramLine[0] == ''):
+                        continue  # Skip empty lines
+                    elif (paramLine[0][0] == '#'):
+                        continue  # Skip comments
+                    else:
+                        paramName = paramLine[0]
+                        paramLine.pop(0)
+                        if paramName == 'gridSize': gridSize = int(paramLine[0])
+                        elif paramName == 'gridSize': gridSize = int(paramLine[0])
+                        elif paramName == 'epochs': epochs = int(paramLine[0])
+                        elif paramName == 'sigma_0': sigma_0 = float(paramLine[0])
+                        elif paramName == 'tau_sigma': tau_sigma = int(paramLine[0])
+                        elif paramName == 'eta_0': eta_0 = float(paramLine[0])
+                        elif paramName == 'tau_eta': tau_eta = int(paramLine[0])
+                        elif paramName == 'plotInterval': plotInterval = int(paramLine[0])
+                        elif paramName == 'testInterval': testInterval = int(paramLine[0])
+                        elif paramName == 'nmbrOfCases': nmbrOfCases = int(paramLine[0])
+                        else: raise AssertionError("Parameter: " + paramName + ", is not a valid parameter name.")
+            icpSOM = som.SOM(problemType='ICP', problemArg=None, gridSize=gridSize,
+                             epochs=epochs, sigma_0=sigma_0, tau_sigma=tau_sigma, eta_0=eta_0, tau_eta=tau_eta,
+                             plotInterval=plotInterval, testInterval=testInterval, fillIn=True, nmbrOfCases=nmbrOfCases)
+            icpSOM.run()
+
+
         wait = input("PRESS ENTER TO EXIT TO MAIN MENU")
         self.state = "options"
 

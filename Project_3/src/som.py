@@ -71,7 +71,7 @@ class SOM:
             case_generator = (lambda: misc.generate_tsp_data(problemArg))
             self.caseManager = Caseman(cfunc=case_generator, cfrac=1.0, tfrac=0.0)
             self.trainingCases = self.caseManager.get_training_cases()
-            self.numOutputs = round(2 * len(self.trainingCases))  # The number of cities in the problem
+            self.numOutputs = round(3 * len(self.trainingCases))  # The number of cities in the problem
         else:
             raise AssertionError("Unknown problem type " + problemType + ".")
 
@@ -148,7 +148,7 @@ class SOM:
             index = int(winner + step) % self.numOutputs
             while(1):
                 T_ji = self.topological_neighbourhood_function(sigma, winner, index)
-                if T_ji < 0.01:
+                if T_ji < 0.01 or step >= self.numOutputs:
                     break
                 else:
                     w_j = self.weights[index, :]
@@ -182,7 +182,7 @@ class SOM:
 
     def run(self):
         if self.problemType == "TSP":
-            self.run_tsp()
+            self.run_tsp2()
         elif self.problemType == "ICP":
             self.run_icp2()
         else:
@@ -206,6 +206,34 @@ class SOM:
                 misc.update_tsp_plot(fig, ax, background, self.weights, weightPts,
                                      self.learning_rate_function(), timeStep, self.epochs,
                                     self.neighbourhood_size_function())
+
+        pathLength = self.calc_path_length()
+        print("Final path length: ", pathLength)
+        wait = input("PRESS ENTER TO CLOSE PLOT")
+        PLT.close(fig)
+
+
+    #TODO: DEBUG IT
+    def run_tsp2(self):
+        fig, ax, background, weightPts, inputPts = misc.create_tsp_plot(self.weights, self.trainingCases)
+        timeStep = 0
+
+        for epoch in range (0, self.epochs + 1):
+            for case in self.trainingCases:
+                self.timeStep = timeStep
+                eta = self.learning_rate_function()
+                sigma = self.neighbourhood_size_function()
+
+                # Training: do weight updates with the training cases
+                winner = self.competitive_process(case)
+                self.weight_update(eta=eta, sigma=sigma, input=case, winner=winner)
+
+                # Plot every PLOT_INTVEVAL
+                if timeStep % self.plotInterval == 0:
+                    misc.update_tsp_plot(fig, ax, background, self.weights, weightPts,
+                                         self.learning_rate_function(), timeStep, self.epochs,
+                                         self.neighbourhood_size_function())
+                timeStep += 1
 
         pathLength = self.calc_path_length()
         print("Final path length: ", pathLength)
@@ -413,8 +441,6 @@ class SOM:
 
 
 
-
-
 class Caseman():
     def __init__(self, cfunc, cfrac = .8, tfrac = .1):
         self.casefunc = cfunc  # Function used to generate all data cases from a dataset
@@ -476,10 +502,10 @@ class Caseman():
 #             plotInterval = 10000, testInterval = 10000, fillIn = True, nmbrOfCases = 600)
 #icpSOM.run()
 
-# tspSOM = SOM(problemType = 'TSP', problemArg = 8, plotInterval = 3, testInterval = 5,
-#                epochs = 400, sigma_0 = 5.0, tau_sigma = 100, eta_0 = 0.3, tau_eta = 2000, fillIn = True)
-#
-# tspSOM.run()
+tspSOM = SOM(problemType = 'TSP', problemArg = 4, plotInterval = 1000,
+               epochs = 350, sigma_0 = 5, tau_sigma = 15000, eta_0 = 0.9, tau_eta = 29000, fillIn = True)
+
+tspSOM.run()
 
 
 

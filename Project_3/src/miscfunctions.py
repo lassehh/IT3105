@@ -68,7 +68,7 @@ def create_tsp_plot(weights, inputs):
 
     inputPts = ax.plot(inputs[:, 0], inputs[:, 1], '^', color='darkslateblue')
     weightPts = ax.plot(neuronRingY, neuronRingX, '.--', color='teal', linewidth=0.8)[0]
-    plt.pause(0.00001)
+    plt.pause(1)
 
     return fig, ax, background, weightPts, inputPts
 
@@ -82,7 +82,7 @@ def update_tsp_plot(fig, ax, background, weights, weightPts,
         learningRate) + ". Neighbourhood: " + str(neighbourhood), fontsize=12)
     ax.draw_artist(weightPts)
 
-    plt.pause(0.00001)
+    plt.pause(0.001)
 
 
 

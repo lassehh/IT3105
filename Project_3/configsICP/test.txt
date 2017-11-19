@@ -1,0 +1,14 @@
+# Best parameters for problem 1
+
+gridSize,15
+epochs,30
+
+sigma_0,9
+tau_sigma,15000
+
+eta_0,0.9
+tau_eta,12500
+
+plotInterval,3501
+testInterval,3501
+nmbrOfCases,1000
