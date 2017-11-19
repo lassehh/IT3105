@@ -1,16 +1,10 @@
 import numpy as np
-import math
 import matplotlib.pyplot as plt
 import networkx as nx
-import copy
-import random
-import time
 from tensorflow.examples.tutorials.mnist import input_data
 
 labelColorDict = {0: 'b', 1: 'g', 2: 'y', 3: 'r', 4: 'pink', 5: 'm', 6:
                   'cyan', 7: 'grey', 8: 'black', 9: 'orange', -1: 'white'}
-
-
 
 def generate_tsp_data(problemNumbr):
     with open('../data/TSP_Problems_Euclidean/' + str(problemNumbr) + '.txt', 'r') as f:
@@ -83,8 +77,6 @@ def update_tsp_plot(fig, ax, background, weights, weightPts,
     ax.draw_artist(weightPts)
 
     plt.pause(0.001)
-
-
 
 def draw_image_classification_graph(nodeLabelsMatrix, gridSize, numberOfLabels = 9):
     G = nx.grid_2d_graph(gridSize, gridSize)

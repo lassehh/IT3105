@@ -2,7 +2,6 @@ import matplotlib.pyplot as PLT
 import numpy as np
 import miscfunctions as misc
 import time
-import random
 import math
 
 
@@ -71,6 +70,7 @@ class SOM:
             case_generator = (lambda: misc.generate_tsp_data(problemArg))
             self.caseManager = Caseman(cfunc=case_generator, cfrac=1.0, tfrac=0.0)
             self.trainingCases = self.caseManager.get_training_cases()
+            self.unnormedTrainingCases = self.caseManager.get_unnormalized_cases()
             self.numOutputs = round(2 * len(self.trainingCases))  # The number of cities in the problem
         else:
             raise AssertionError("Unknown problem type " + problemType + ".")
@@ -148,7 +148,7 @@ class SOM:
             index = int(winner + step) % self.numOutputs
             while(1):
                 T_ji = self.topological_neighbourhood_function(sigma, winner, index)
-                if T_ji < 0.01 or step >= self.numOutputs:
+                if abs(step) >= round(self.numOutputs*0.2):
                     break
                 else:
                     w_j = self.weights[index, :]
@@ -189,6 +189,7 @@ class SOM:
             raise AssertionError("Problem type \'", self.problemType, "\' is not defined.")
 
 
+    # Descriotion: Update timestep each epoch
     def run_tsp(self):
         fig, ax, background, weightPts, inputPts = misc.create_tsp_plot(self.weights, self.trainingCases)
 
@@ -214,7 +215,7 @@ class SOM:
         PLT.close(fig)
 
 
-    #TODO: DEBUG IT
+    # Description: Updates timestep for each case
     def run_tsp2(self):
         fig, ax, background, weightPts, inputPts = misc.create_tsp_plot(self.weights, self.trainingCases)
         timeStep = 0
@@ -229,12 +230,16 @@ class SOM:
                 winner = self.competitive_process(case)
                 self.weight_update(eta=eta, sigma=sigma, input=case, winner=winner)
 
-                # Plot every PLOT_INTVEVAL
-                if timeStep % self.plotInterval == 0:
-                    misc.update_tsp_plot(fig, ax, background, self.weights, weightPts,
-                                         self.learning_rate_function(), epoch, self.epochs,
-                                         self.neighbourhood_size_function())
                 timeStep += 1
+            # Plot every PLOT_INTVEVAL
+            if epoch % self.plotInterval == 0:
+                misc.update_tsp_plot(fig, ax, background, self.weights, weightPts,
+                                     self.learning_rate_function(), epoch, self.epochs,
+                                     self.neighbourhood_size_function())
+            np.random.set_state(self.caseManager.state)
+            np.random.shuffle(self.trainingCases)
+            np.random.set_state(self.caseManager.state)
+            np.random.shuffle(self.unnormedTrainingCases)
 
         pathLength = self.calc_path_length()
         print("Final path length: ", pathLength)
@@ -278,10 +283,6 @@ class SOM:
                 accuracy = self.test_icp_accuracy(self.trainingCases, self.trainingCaseLabels, self.nodeLabels, caseType = "Training")
                 accuracyHistory.append((timeStep, accuracy)) #x,y plot
 
-            # Random shuffle the cases for next epoch
-            # np.random.set_state(self.caseManager.state)
-            # np.random.shuffle(self.trainingCases)
-            # np.random.shuffle(self.trainingCaseLabels)
 
         # Final testing on the testing cases
         self.test_icp_accuracy(self.testingCases, self.testingCaseLabels, self.nodeLabels, caseType="Final testing")
@@ -290,8 +291,6 @@ class SOM:
         runEndTime = time.clock()
         print("Run time : " , runEndTime - runStartTime)
         wait = input("ENTER TO QUIT")
-        #PLT.close(fig)
-        #PLT.pause(0.01)
 
 
     def run_icp2(self):
@@ -339,7 +338,9 @@ class SOM:
 
         runEndTime = time.clock()
         print("Run time : ", runEndTime - runStartTime)
-        time.sleep(0.6)
+        time.sleep(0.2)
+        wait = input("PRESS ENTER TO CLOSE PLOT")
+        PLT.close()
 
 
     def test_icp_accuracy(self, cases, casesLabels, nodeLabels, caseType):
@@ -408,7 +409,7 @@ class SOM:
         distance = 0
         prevCity = 0
         firstCity = 0
-        cityCoordinates = self.caseManager.get_unnormalized_cases()
+        cityCoordinates = self.unnormedTrainingCases
         if plot:
             PLT.ion()
             fig = PLT.figure()
@@ -527,15 +528,10 @@ class Caseman():
 #             plotInterval = 10000, testInterval = 10000, fillIn = True, nmbrOfCases = 600)
 #icpSOM.run()
 
-# tspSOM = SOM(problemType = 'TSP', problemArg = 4, plotInterval = 1000,
-#                epochs = 400, sigma_0 = 5, tau_sigma = 15000, eta_0 = 0.9, tau_eta = 29000, fillIn = True)
-#
-# tspSOM.run()
+#tspSOM = SOM(problemType = 'TSP', problemArg = 4, plotInterval = 1000,
+#               epochs = 350, sigma_0 = 5, tau_sigma = 15000, eta_0 = 0.9, tau_eta = 29000, fillIn = True)
 
-# tspSOM = SOM(problemType='TSP', problemArg=4, plotInterval=50,
-#              epochs=400, sigma_0=5, tau_sigma=100, eta_0=0.4, tau_eta=2000, fillIn=True)
-#
-# tspSOM.run()
+#tspSOM.run()
 
 #
 #

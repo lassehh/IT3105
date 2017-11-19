@@ -1,5 +1,4 @@
 import os
-import glob
 import time
 import som
 from msvcrt import getwch
@@ -8,20 +7,20 @@ from msvcrt import getwch
 Class: UI
 """
 class Ui:
-    state = None                                                                        # Which menu/submenu the program is currently running
-    stateDict = {0: 'testTsp', 1: 'bestTsp', 2: 'testIcp', 3: 'bestIcp', 4: 'exit'}                         # Submenus
-    menuIndexPointer = 0                                                                # The graphical pointer index
+    state = None # Which menu/submenu the program is currently running
+    stateDict = {0: 'tspInput', 1: 'tspConfigs', 2: 'icpInput', 3: 'icpConfigs', 4: 'exit'} # Submenus
+    menuIndexPointer = 0 # The graphical pointer index
 
     # Text/graphical stuff
     pointer = '>>'
     headerText = '### SOM UI - PROJECT 3 DEMO ###\n'
-    initMenuOptions = { 0: 'TEST scenarios on TSP', 1: 'RUN BEST scenario on TSP',
-                        2: 'TEST scenarios on ICP', 3: 'RUN BEST scenario on ICP', 4: 'Exit program.'}
+    initMenuOptions = { 0: 'INPUT scenarios on TSP', 1: 'Do TSP from CONFIG',
+                        2: 'INPUT scenarios on ICP', 3: 'Do ICP from CONFIG', 4: 'Exit program.'}
 
     def __init__(self, state = 'options'):
         self.state = state
 
-    # Description: Launches the menu and it's state machine.
+    # Description: Launches the ui and it's state machine.
     # Input: None
     # Output: None
     def start_ui(self):
@@ -29,16 +28,16 @@ class Ui:
         exit = False
         while(not exit):
             if(self.state == 'options'): self.options_menu()
-            if(self.state == 'testTsp'): self.test_tsp_interface()
-            if(self.state == 'bestTsp'): self.best_tsp_interface()
-            if(self.state == 'testIcp'): self.test_icp_interface()
-            if(self.state == 'bestIcp'): self.best_icp_interface()
+            if(self.state == 'tspInput'): self.input_to_tsp()
+            if(self.state == 'tspConfigs'): self.config_to_tsp()
+            if(self.state == 'icpInput'): self.input_to_icp()
+            if(self.state == 'icpConfigs'): self.config_to_icp()
             if(self.state == "exit"):
                 exit = True
                 print("\nExiting program..")
                 time.sleep(0.6)
 
-    # Description:
+    # Description: Main menu of the state machine
     # Input: None
     # Output: None
     def options_menu(self):
@@ -62,13 +61,13 @@ class Ui:
             time.sleep(0.01)
 
 
-    def best_tsp_interface(self):
+    def config_to_tsp(self):
         os.system('cls' if os.name == 'nt' else 'clear')
         print(self.headerText)
         print("--- LOAD BEST PARAMETER SCENARIO FOR TSP --- \n")
         print("Supported config formats: .txt\n")
         print("Available scenarios:\n")
-        for root, dirs, files in os.walk("../configsTSP"):
+        for root, dirs, files in os.walk("../configs/tsp"):
             for file in files:
                 if file.endswith('.txt'):
                     print(file)
@@ -76,7 +75,7 @@ class Ui:
         fileName = input("\nSelect data source: ")
         confirmInput = input("Proceed with the chosen parameters[y/n]? ")
         if confirmInput == 'y':
-            with open('../configsTSP/' + fileName, 'r') as f:
+            with open('../configs/tsp/' + fileName, 'r') as f:
                 for paramLine in f:
                     paramLine = paramLine.strip("\n")
                     paramLine = paramLine.split(",")
@@ -104,12 +103,12 @@ class Ui:
         self.state = "options"
         pass
 
-    def best_icp_interface(self):
+    def config_to_icp(self):
         os.system('cls' if os.name == 'nt' else 'clear')
         print("--- LOAD BEST PARAMETER SCENARIO FOR ICP --- \n")
         print("Supported config formats: .txt\n")
         print("Available scenarios:\n")
-        for root, dirs, files in os.walk("../configsICP"):
+        for root, dirs, files in os.walk("../configs/icp"):
             for file in files:
                 if file.endswith('.txt'):
                     print(file)
@@ -117,7 +116,7 @@ class Ui:
         fileName = input("\nSelect data source: ")
         confirmInput = input("Proceed with the chosen parameters[y/n]? ")
         if confirmInput == 'y':
-            with open('../configsICP/' + fileName, 'r') as f:
+            with open('../configs/icp/' + fileName, 'r') as f:
                 for paramLine in f:
                     paramLine = paramLine.strip("\n")
                     paramLine = paramLine.split(",")
@@ -149,7 +148,7 @@ class Ui:
         self.state = "options"
 
 
-    def test_tsp_interface(self):
+    def input_to_tsp(self):
         os.system('cls' if os.name == 'nt' else 'clear')
         print(self.headerText)
         print("--- TESTING TCP SCENARIO ---")
@@ -174,7 +173,7 @@ class Ui:
         self.state = "options"
 
 
-    def test_icp_interface(self):
+    def input_to_icp(self):
         os.system('cls' if os.name == 'nt' else 'clear')
         print(self.headerText)
         print("--- TESTING ICP SCENARIO ---")

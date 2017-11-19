@@ -1,0 +1,11 @@
+# Best parameters for problem 1
+
+problemNumber,4
+plotInterval,10
+epochs,600
+
+sigma_0,5
+tau_sigma,20000
+
+eta_0,0.5
+tau_eta,40000
