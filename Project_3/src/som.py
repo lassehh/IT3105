@@ -220,16 +220,15 @@ class SOM:
         timeStep = 0
 
         for epoch in range (0, self.epochs + 1):
+            self.timeStep = epoch
+            eta = self.learning_rate_function()
+            sigma = self.neighbourhood_size_function()
             for case in self.trainingCases:
-                self.timeStep = timeStep
-                eta = self.learning_rate_function()
-                sigma = self.neighbourhood_size_function()
-
                 # Training: do weight updates with the training cases
                 winner = self.competitive_process(case)
                 self.weight_update(eta=eta, sigma=sigma, input=case, winner=winner)
 
-                timeStep += 1
+            #timeStep += 1
             # Plot every PLOT_INTVEVAL
             if epoch % self.plotInterval == 0:
                 misc.update_tsp_plot(fig, ax, background, self.weights, weightPts,

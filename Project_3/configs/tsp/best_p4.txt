@@ -2,10 +2,10 @@
 
 problemNumber,4
 plotInterval,10
-epochs,600
+epochs,200
 
-sigma_0,5
-tau_sigma,20000
+sigma_0,10
+tau_sigma,50
 
-eta_0,0.5
-tau_eta,40000
+eta_0,0.4
+tau_eta,100
