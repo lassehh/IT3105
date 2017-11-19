@@ -189,7 +189,7 @@ class SOM:
             raise AssertionError("Problem type \'", self.problemType, "\' is not defined.")
 
 
-    # Descriotion: Update timestep each epoch
+    # Description: Update timestep each epoch
     def run_tsp(self):
         fig, ax, background, weightPts, inputPts = misc.create_tsp_plot(self.weights, self.trainingCases)
 
@@ -409,6 +409,7 @@ class SOM:
         prevCity = 0
         firstCity = 0
         cityCoordinates = self.unnormedTrainingCases
+        print("Visited cities:")
         if plot:
             PLT.ion()
             fig = PLT.figure()
@@ -430,6 +431,8 @@ class SOM:
                 PLT.pause(0.001)
 
             prevCity = city
+
+            print("\t(x, y) = (",cityCoordinates[city, 0], ", ", cityCoordinates[city, 1], ")")
         distance += (np.linalg.norm(cityCoordinates[firstCity, :] - cityCoordinates[prevCity, :]))
         if plot:
             xpts = np.append(cityCoordinates[prevCity, 0], cityCoordinates[firstCity, 0])
