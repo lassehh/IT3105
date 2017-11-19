@@ -182,7 +182,7 @@ class SOM:
 
     def run(self):
         if self.problemType == "TSP":
-            self.run_tsp2()
+            self.run_tsp()
         elif self.problemType == "ICP":
             self.run_icp2()
         else:
@@ -210,6 +210,7 @@ class SOM:
 
         pathLength = self.calc_path_length()
         print("Final path length: ", pathLength)
+        self.calc_node_path_length()
         wait = input("PRESS ENTER TO CLOSE PLOT")
         PLT.close(fig)
 
@@ -241,6 +242,7 @@ class SOM:
 
         pathLength = self.calc_path_length()
         print("Final path length: ", pathLength)
+        self.calc_node_path_length()
         wait = input("PRESS ENTER TO CLOSE PLOT")
         PLT.close(fig)
 
@@ -438,6 +440,29 @@ class SOM:
             PLT.ioff()
         return distance
 
+    def calc_node_path_length(self):
+        cityCoordinates = self.caseManager.get_unnormalized_cases()
+        max_x = np.max(cityCoordinates[:, 0])
+        min_x = np.min(cityCoordinates[:, 0])
+        max_y = np.max(cityCoordinates[:, 1])
+        min_y = np.min(cityCoordinates[:, 1])
+        # Scale weights between min and max
+        self.weights[:, 0] = (max_x - min_x)*self.weights[:, 0] + min_x
+        self.weights[:, 1] = (max_y - min_y) * self.weights[:, 1] + min_y
+
+        prev_output = 0
+        first_output = 0
+        distance = 0
+        for j in range(0, self.numOutputs):
+            output = self.weights[j, :]
+            if j == 0:
+                prev_output = output
+                first_output = output
+
+            distance += (np.linalg.norm(output - prev_output))
+            prev_output = output
+        distance += (np.linalg.norm(first_output - prev_output))
+        print("Distance between output nodes: ", distance)
 
 
 
@@ -506,8 +531,6 @@ class Caseman():
 #               epochs = 350, sigma_0 = 5, tau_sigma = 15000, eta_0 = 0.9, tau_eta = 29000, fillIn = True)
 
 #tspSOM.run()
-
-
 
 #
 #
