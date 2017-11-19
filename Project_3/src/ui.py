@@ -8,14 +8,14 @@ Class: UI
 """
 class Ui:
     state = None # Which menu/submenu the program is currently running
-    stateDict = {0: 'tspInput', 1: 'tspConfigs', 2: 'icpInput', 3: 'icpConfigs', 4: 'exit'} # Submenus
+    stateDict = {0: 'tspInput', 1: 'icpInput', 2: 'tspConfigs', 3: 'icpConfigs', 4: 'exit'} # Submenus
     menuIndexPointer = 0 # The graphical pointer index
 
     # Text/graphical stuff
     pointer = '>>'
     headerText = '### SOM UI - PROJECT 3 DEMO ###\n'
-    initMenuOptions = { 0: 'INPUT scenarios on TSP', 1: 'Do TSP from CONFIG',
-                        2: 'INPUT scenarios on ICP', 3: 'Do ICP from CONFIG', 4: 'Exit program.'}
+    initMenuOptions = { 0: 'INPUT scenarios on TSP', 1: 'INPUT scenarios on ICP',
+                        2: 'Do TSP from CONFIG', 3: 'Do ICP from CONFIG', 4: 'Exit program'}
 
     def __init__(self, state = 'options'):
         self.state = state
@@ -64,9 +64,9 @@ class Ui:
     def config_to_tsp(self):
         os.system('cls' if os.name == 'nt' else 'clear')
         print(self.headerText)
-        print("--- LOAD BEST PARAMETER SCENARIO FOR TSP --- \n")
+        print("--- LOAD BEST PARAMETER SCENARIO FOR TSP --- ")
         print("Supported config formats: .txt\n")
-        print("Available scenarios:\n")
+        print("Available scenarios:")
         for root, dirs, files in os.walk("../configs/tsp"):
             for file in files:
                 if file.endswith('.txt'):
@@ -105,9 +105,9 @@ class Ui:
 
     def config_to_icp(self):
         os.system('cls' if os.name == 'nt' else 'clear')
-        print("--- LOAD BEST PARAMETER SCENARIO FOR ICP --- \n")
+        print("--- LOAD BEST PARAMETER SCENARIO FOR ICP --- ")
         print("Supported config formats: .txt\n")
-        print("Available scenarios:\n")
+        print("Available scenarios:")
         for root, dirs, files in os.walk("../configs/icp"):
             for file in files:
                 if file.endswith('.txt'):

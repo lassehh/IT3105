@@ -30,10 +30,7 @@ class SOM:
 
     # TSP or image classification problem (ICP)
     problemType = None
-
     discriminantsStorage = None
-
-
 
     def __init__(self, plotInterval = 10, testInterval = 10, problemType = 'TSP', problemArg = 1,
                  initialWeightRange = (0,1), gridSize = 10, epochs = 200, sigma_0 = 5.0,
@@ -189,7 +186,7 @@ class SOM:
             raise AssertionError("Problem type \'", self.problemType, "\' is not defined.")
 
 
-    # Description: Update timestep each epoch
+    # Note: Update timestep each epoch
     def run_tsp(self):
         fig, ax, background, weightPts, inputPts = misc.create_tsp_plot(self.weights, self.trainingCases)
 
@@ -215,10 +212,9 @@ class SOM:
         PLT.close(fig)
 
 
-    # Description: Updates timestep for each case
+    # Note: Updates timestep for each case
     def run_tsp2(self):
         fig, ax, background, weightPts, inputPts = misc.create_tsp_plot(self.weights, self.trainingCases)
-        timeStep = 0
 
         for epoch in range (0, self.epochs + 1):
             self.timeStep = epoch
@@ -229,8 +225,6 @@ class SOM:
                 winner = self.competitive_process(case)
                 self.weight_update(eta=eta, sigma=sigma, input=case, winner=winner)
 
-            #timeStep += 1
-            # Plot every PLOT_INTVEVAL
             if epoch % self.plotInterval == 0:
                 misc.update_tsp_plot(fig, ax, background, self.weights, weightPts,
                                      self.learning_rate_function(), epoch, self.epochs,
@@ -246,6 +240,8 @@ class SOM:
         wait = input("PRESS ENTER TO CLOSE PLOT")
         PLT.close(fig)
 
+
+    # Note: updates lrate & neighbourhood each epoch
     def run_icp(self):
         runStartTime = time.clock()
         # Plot initial node classifications
@@ -291,7 +287,7 @@ class SOM:
         print("Run time : " , runEndTime - runStartTime)
         wait = input("ENTER TO QUIT")
 
-
+    # Note: update timestep for each case
     def run_icp2(self):
         runStartTime = time.clock()
         # Plot initial node classifications
@@ -305,7 +301,7 @@ class SOM:
                 eta = self.learning_rate_function()
                 sigma = self.neighbourhood_size_function()
 
-                if(self.timeStep % 10 == 0):
+                if(self.timeStep % 100 == 0):
                     print(">> TIMESTEP: ", self.timeStep)
                     print('Learning rate: \t\t\t%5.4f' % (eta))
                     print('Neighbourhood size: \t%5.4f' % (sigma))
@@ -505,41 +501,4 @@ class Caseman():
         np.random.shuffle(cases)
         return cases
 
-# SOM 2nd BEST: 95% training, 75/75/75% testing
-# grid 30, epochs 20, sigma0 16, tausigma 9 eta0 0.2
 
-# SOM this also worked pretty well
-# icpSOM = SOM(problemType = 'ICP', problemArg = 8, gridSize = 30, initialWeightRange = (0.49,0.51),
-#             epochs = 5, sigma_0 = 16, tau_sigma = 1, eta_0 = 0.5, tau_eta = 6000,
-#             plotInterval = 20, testInterval = 3)
-
-
-
-
-# SOM BEST: 96% training, 76/82/80/80/78/79/74/82% testing
-# icpSOM = SOM(problemType = 'ICP', problemArg = 8, gridSize = 40, initialWeightRange = (0.49,0.51),
-#             epochs = 10, sigma_0 = 20, tau_sigma = 4, eta_0 = 0.2, tau_eta = 6000,
-#             plotInterval = 10, testInterval = 2)
-
-#with run_icp2 BESTBESTBESTBEST 17-11-2017:2220
-#icpSOM = SOM(problemType = 'ICP', problemArg = None, gridSize = 40, initialWeightRange = (0,1),
-            # epochs = 1, sigma_0 = 16, tau_sigma = 1400, eta_0 = 0.6, tau_eta = 2000,
-            # plotInterval = 3500, testInterval = 3500, fillIn = True, nmbrOfCases = 3500)
-# icpSOM = SOM(problemType = 'ICP', problemArg = None, gridSize = 10, initialWeightRange = (0s,1),
-#             epochs = 50, sigma_0 = 5, tau_sigma = 50*250, eta_0 = 0.1, tau_eta = 50*30000,
-#             plotInterval = 10000, testInterval = 10000, fillIn = True, nmbrOfCases = 600)
-#icpSOM.run()
-
-#tspSOM = SOM(problemType = 'TSP', problemArg = 4, plotInterval = 1000,
-#               epochs = 350, sigma_0 = 5, tau_sigma = 15000, eta_0 = 0.9, tau_eta = 29000, fillIn = True)
-
-#tspSOM.run()
-
-#
-#
-#
-#
-#icpSOM = SOM(problemType = 'ICP', problemArg = None, gridSize = 40, initialWeightRange = (0,1),
-            # epochs = 1, sigma_0 = 16, tau_sigma = 1400, eta_0 = 0.6, tau_eta = 2000,
-            # plotInterval = 3500, testInterval = 3500, fillIn = True, nmbrOfCases = 3500)
-#icpSOM.run()
