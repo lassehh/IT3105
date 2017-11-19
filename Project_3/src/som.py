@@ -182,7 +182,7 @@ class SOM:
 
     def run(self):
         if self.problemType == "TSP":
-            self.run_tsp()
+            self.run_tsp2()
         elif self.problemType == "ICP":
             self.run_icp2()
         else:
@@ -240,7 +240,7 @@ class SOM:
             np.random.set_state(self.caseManager.state)
             np.random.shuffle(self.unnormedTrainingCases)
 
-        pathLength = self.calc_path_length()
+        pathLength = self.calc_path_length(plot = True)
         print("Final path length: ", pathLength)
         self.calc_node_path_length()
         wait = input("PRESS ENTER TO CLOSE PLOT")
@@ -399,8 +399,8 @@ class SOM:
 
     def calc_path_length(self, plot = False):
         winners = np.ones(len(self.trainingCases), dtype = np.int32)*(-1)    # array to be filled with the winning neuron for each city
-        for i, input in enumerate(self.trainingCases):
-            winning_neuron = self.competitive_process(input)
+        for i, inp in enumerate(self.trainingCases):
+            winning_neuron = self.competitive_process(inp)
             winners[i] = winning_neuron
         mapCityIndex2OutputIndex = np.stack((np.arange(len(self.trainingCases)), winners), axis = 1)
         mapCityIndex2OutputIndex = mapCityIndex2OutputIndex[np.argsort(mapCityIndex2OutputIndex[:, 1])] # sort the array based on ascending output neuron index
@@ -413,6 +413,7 @@ class SOM:
         if plot:
             PLT.ion()
             fig = PLT.figure()
+            PLT.title("Final path")
             PLT.plot(cityCoordinates[:, 0], cityCoordinates[:, 1], 'ro')
         # go through the array:
         for j, cityAndOutput in enumerate(mapCityIndex2OutputIndex):
@@ -432,7 +433,7 @@ class SOM:
 
             prevCity = city
 
-            print("\t(x, y) = (",cityCoordinates[city, 0], ", ", cityCoordinates[city, 1], ")")
+            print("\t", j+1, ": (x, y) = (", int(cityCoordinates[city, 0]), ", ", int(cityCoordinates[city, 1]), ")")
         distance += (np.linalg.norm(cityCoordinates[firstCity, :] - cityCoordinates[prevCity, :]))
         if plot:
             xpts = np.append(cityCoordinates[prevCity, 0], cityCoordinates[firstCity, 0])
@@ -441,6 +442,8 @@ class SOM:
             PLT.show()
             PLT.pause(0.001)
             PLT.ioff()
+            wait = input("PRESS ENTER TO CLOSE PLOT")
+            PLT.close(fig)
         return distance
 
     def calc_node_path_length(self):
